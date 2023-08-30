@@ -14,7 +14,8 @@ from datetime import timedelta, datetime
 import json
 import os
 
-from lib.lib import authenticate_user, getAccessToken
+from api.v1 import users
+from lib.lib import getHashedPassword
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SECRET_FILE = os.path.join(BASE_DIR, "secrets.json")
@@ -43,17 +44,9 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-class tokenRequest(BaseModel):
-    username: str
-    password: str
+app.include_router(users.router)
 
-@app.post("/token")
-async def token(postData: tokenRequest):
-    print(postData.username)
-    print(postData.password)
 
-    if(await authenticate_user(postData.username, postData.password)):
-        accessToken = await getAccessToken(postData.username)
-    else:
-        return "authenticate failed"
-    return accessToken
+@app.get("/test")
+def testP():
+    return getHashedPassword("3456")

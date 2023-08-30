@@ -1,4 +1,5 @@
 secrets.json
 __pycache__
 data/dto/__pycache__
+data/dao/__pycache__
 lib/__pycache__
