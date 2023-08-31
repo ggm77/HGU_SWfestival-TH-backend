@@ -49,4 +49,4 @@ app.include_router(users.router)
 
 @app.get("/test")
 def testP():
-    return getHashedPassword("3456")
+    return getHashedPassword()

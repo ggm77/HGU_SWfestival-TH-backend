@@ -1,23 +1,42 @@
+from fastapi.encoders import jsonable_encoder
 
-async def getUserInfo(email):
+from DB.database import engineconn
+from DB.models import *
+from DB.models import userInfo
 
-    #get all of userinfo from db
-    #db.get(username)
 
+engine = engineconn()
+session = engine.sessionmaker()
+
+
+
+async def getUserInfo(userNumber):
     #if nothing in there?
 
-    user = {
-        "username" : "testuser",
-        "userNumber" : 1, 
-        "hashed_password" : "$2b$12$9fayMKgDg7H0k.GkdBP/ieUxVxBNJqWttxVVZ7fHTw8yyP/fla0bK",
-        "userType" : "user",
-        "signUpDate" : "20230830",
-        "email" : "testuser@raspinas.org.iptime",
-        "location" : [0.0, 0.0],
-        "postingList" : [1,2,3],
-        "chatList" : [1,2,3],
-        "point" : 100,
-        "disabled" : 0
-    }
-
+    user = jsonable_encoder(session.query(userInfo).get(userNumber))
     return user
+
+async def createUserInfo(user: dict):
+
+    #create user
+    
+
+    #if created
+    user = {
+            "username" : "testuser",
+            "userNumber" : 1, 
+            "hashed_password" : "",
+            "userType" : "user",
+            "signUpDate" : "20230830",
+            "email" : "testuser@raspinas.org.iptime",
+            "location" : [0.0, 0.0],
+            "point" : 100,
+            "disabled" : 0
+        }
+
+
+    return await getUserInfo(user["userNumber"])
+
+
+async def emailToUserNumber(email):
+    return 1

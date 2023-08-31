@@ -1,5 +1,6 @@
 secrets.json
+assets/profilePicture/
 __pycache__
-data/dto/__pycache__
-data/dao/__pycache__
+DB/__pycache__
+api/v1/__pycache__
 lib/__pycache__
