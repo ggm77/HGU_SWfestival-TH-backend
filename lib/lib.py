@@ -1,7 +1,8 @@
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
-from jose import jwt
+from jose import jwt, JWTError
 import json
 import os
 
@@ -20,26 +21,32 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 1
 
+async def passwordVerify(plain, hashed):
+    return pwd_context.verify(plain, hashed)
 
 
 async def authenticate_user(email, password):
 
     userNumber = await emailToUserNumber(email)
 
-    if(userNumber == False):
-        return False
+    if(userNumber == 0):
+        return -1
     
     user = await getUserInfo(userNumber)
 
-    if(pwd_context.verify(password, user["hashed_password"])):
-        return True
+    if(not user):
+        return -1
+
+    if(await passwordVerify(password, user["hashed_password"])):
+        return 1
+    else:
+        return 0
     
 
-async def checkUserExist(userNumber):
+async def checkUserExist(email) -> bool:
+    userNumber = await emailToUserNumber(email)
 
-    user = await getUserInfo(userNumber)
-
-    if(user):
+    if(userNumber):
         return True
     else:
         return False
@@ -47,8 +54,10 @@ async def checkUserExist(userNumber):
 
 async def registUser(userInfo: dict):
 
-    user = await createUserInfo(userInfo)
+    userInfo["hashed_password"] = getHashedPassword(userInfo["password"])
+    del userInfo["password"]
 
+    user = await createUserInfo(userInfo)
 
     if(user):
         return user
@@ -56,7 +65,7 @@ async def registUser(userInfo: dict):
         return False
 
 async def create_access_token(userNumber):
-    data = {"sub":userNumber}
+    data = {"sub":str(userNumber)}
     expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = data.copy()
@@ -69,7 +78,7 @@ async def create_access_token(userNumber):
     return encoded_jwt
 
 async def create_refresh_token(userNumber):
-    data = {"sub":userNumber}
+    data = {"sub":str(userNumber)}
     expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
     to_encode = data.copy()
@@ -81,6 +90,18 @@ async def create_refresh_token(userNumber):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+async def decodeToken(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    return payload.get("sub")
+
 
 def getHashedPassword(password):
     return pwd_context.hash(password)
+

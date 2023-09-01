@@ -12,8 +12,8 @@ class userInfo(Base):
     userType = Column(VARCHAR, nullable=False)
     signUpDate = Column(DATETIME, nullable=False)
     email = Column(VARCHAR, nullable=False)
-    locationX = Column(FLOAT, nullable=False)
-    locationY = Column(FLOAT, nullable=False)
+    locationX = Column(FLOAT, nullable=False)#Latitude : 위도
+    locationY = Column(FLOAT, nullable=False)#longitude : 경도
     point = Column(INTEGER, nullable=False)
     disabled = Column(Boolean, nullable=False)
 

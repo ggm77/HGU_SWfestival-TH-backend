@@ -8,7 +8,8 @@ class registRequest(BaseModel):
     username: str
     email: str
     password: str
-    location: list[float]
+    locationX: float
+    locationY: float
 
 class registResponse(BaseModel):#not use
     username: str
@@ -18,6 +19,34 @@ class registResponse(BaseModel):#not use
     email: str
     locationX: float
     locationY: float
-    chatList: list[int]
     point: int
     disabled: bool
+
+
+class userinfoRequest(BaseModel):
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+
+class deleteuserRequest(BaseModel):
+    email: str
+    password: str
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class updateuserRequest(BaseModel):
+    email: str
+    password: str
+    locationX: float
+    locationY: float
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class verificationRequest(BaseModel):
+    password: str
+    access_token: str
+    token_type: str
+    refresh_token: str

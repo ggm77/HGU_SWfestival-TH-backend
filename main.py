@@ -46,7 +46,3 @@ app.add_middleware(
 
 app.include_router(users.router)
 
-
-@app.get("/test")
-def testP():
-    return getHashedPassword()
