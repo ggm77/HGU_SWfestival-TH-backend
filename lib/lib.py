@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
-from jose import jwt, JWTError
+from jose import jwt, exceptions
 import json
 import os
 
@@ -90,17 +90,29 @@ async def create_refresh_token(userNumber):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def decodeToken(token: str):
+async def decodeToken(token: str, refresh_token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except exceptions.ExpiredSignatureError:
+        payload = await decodeRefreshToken(refresh_token)
+    except Exception as e:
         raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     return payload.get("sub")
 
+async def decodeRefreshToken(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+    return payload
 
 def getHashedPassword(password):
     return pwd_context.hash(password)

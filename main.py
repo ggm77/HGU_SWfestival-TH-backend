@@ -7,23 +7,8 @@ uvicorn main:app --reload --host=0.0.0.0 --port=8000
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
-from pydantic import BaseModel
-from datetime import timedelta, datetime
-import json
-import os
 
-from api.v1 import users
-from lib.lib import getHashedPassword
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SECRET_FILE = os.path.join(BASE_DIR, "secrets.json")
-secrets = json.loads(open(SECRET_FILE).read())
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+from api.v1 import user, token, verification
 
 app = FastAPI()
 
@@ -44,5 +29,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-app.include_router(users.router)
+app.include_router(user.router)
+app.include_router(token.router)
+app.include_router(verification.router)
 

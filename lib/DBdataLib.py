@@ -12,7 +12,6 @@ session = engine.sessionmaker()
 
 
 async def getUserInfo(userNumber):
-    #if nothing in there?
 
     user = jsonable_encoder(session.query(userInfo).get(userNumber))
     session.close()
@@ -54,9 +53,14 @@ async def emailToUserNumber(requestEmail) -> int:
 async def updateUserInfo(user: dict):
     #not complete
     try:
-        session.add(session.query(userInfo).filter())
-    except:
-        return
+        session.query(userInfo).filter(userInfo.userNumber == user["userNumber"]).update(user)
+        session.commit()
+    except Exception as e:
+        print(e)
+        session.close()
+        return 0
+    session.close()
+    return user["userNumber"]
 
 
 async def deleteUserInfo(userNumber):
