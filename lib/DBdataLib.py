@@ -51,7 +51,6 @@ async def emailToUserNumber(requestEmail) -> int:
 
 
 async def updateUserInfo(user: dict):
-    #not complete
     try:
         session.query(userInfo).filter(userInfo.userNumber == user["userNumber"]).update(user)
         session.commit()

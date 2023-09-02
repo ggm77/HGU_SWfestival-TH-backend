@@ -50,3 +50,15 @@ class verificationRequest(BaseModel):
     access_token: str
     token_type: str
     refresh_token: str
+
+class disableuserRequest(BaseModel):
+    targetUserNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class enableuserRequest(BaseModel):
+    targetUserNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
