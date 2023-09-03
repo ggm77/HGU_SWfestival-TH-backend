@@ -55,7 +55,7 @@ async def updateUserInfo(user: dict):
         session.query(userInfo).filter(userInfo.userNumber == user["userNumber"]).update(user)
         session.commit()
     except Exception as e:
-        print(e)
+        print("[DB Error]", e)
         session.close()
         return 0
     session.close()

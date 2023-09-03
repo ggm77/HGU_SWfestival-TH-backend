@@ -22,6 +22,11 @@ async def disableUser(postData: disableuserRequest):
                 status_code=status.HTTP_500,
                 detail="Failed to update userInfo in DB."
             )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Require admin account."
+        )
         
 
 @router.post("/enableUser")
@@ -38,7 +43,42 @@ async def enableUser(postData: enableuserRequest):
                 status_code=status.HTTP_500,
                 detail="Failed to update userInfo in DB."
             )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Require admin account."
+        )
 
 @router.put("/user")
-async def changeUserInfo(postData):
-    return
+async def changeUserInfo(postData: changuserinfoRequest):
+    if(await adminVerify(postData.admin_access_token, postData.admin_refresh_token)):
+        updateData = jsonable_encoder(postData)
+
+        if(updateData["email"] != None):
+            if(await checkUserExist(updateData["email"])):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already exist."
+                )
+
+        keyList = list(updateData.keys())
+        for i in range(len(keyList)):
+            if(updateData[keyList[i]] == None):
+                del updateData[keyList[i]]
+        del updateData["admin_access_token"]
+        del updateData["admin_token_type"]
+        del updateData["admin_refresh_token"]
+        
+        value = await updateUserInfo(updateData)
+        if(value != 0):
+            return {"result":"success"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update userInfo in DB."
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Require admin account."
+        )

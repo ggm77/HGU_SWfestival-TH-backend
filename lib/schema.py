@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Union
 
 class tokenRequest(BaseModel):
     email: str
@@ -62,3 +63,18 @@ class enableuserRequest(BaseModel):
     access_token: str
     token_type: str
     refresh_token: str
+
+class changuserinfoRequest(BaseModel):
+    userNumber: int
+    username: Union[str, None]
+    password: Union[str, None]
+    userType: Union[str, None]
+    signUpDate: Union[str, None]
+    email: Union[str, None]
+    locationX: Union[float, None]
+    locationY: Union[float, None]
+    point: Union[int, None]
+    disabled: Union[bool, None]
+    admin_access_token: str
+    admin_token_type: str
+    admin_refresh_token: str

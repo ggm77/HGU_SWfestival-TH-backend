@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
@@ -113,6 +113,16 @@ async def decodeRefreshToken(token: str):
             detail=str(e),
         )
     return payload
+
+
+async def adminVerify(token, refreshToken):
+    userNumber = await decodeToken(token, refreshToken)
+    info = await getUserInfo(userNumber)
+    if(info["userType"] == "admin"):
+        return True
+    else:
+        return False
+    
 
 def getHashedPassword(password):
     return pwd_context.hash(password)
