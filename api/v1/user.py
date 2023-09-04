@@ -51,7 +51,7 @@ async def getUserinfo(access_token: str, token_type: str, refresh_token: str):
     return JSONResponse(jsonable_encoder(user))
     
 
-@router.put("/user")
+@router.patch("/user")
 async def updateUserinfo(putData: updateuserRequest):
     userNumber = await decodeToken(putData.access_token, putData.refresh_token)
     info = await getUserInfo(userNumber)

@@ -158,7 +158,10 @@ async def adminVerify(token, refreshToken):
     if(info["userType"] == "admin"):
         return True
     else:
-        return False
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Require admin account."
+        )
     
 
 def getHashedPassword(password):

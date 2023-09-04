@@ -107,3 +107,41 @@ class deletepostingRequest(BaseModel):
     access_token: str
     token_type: str
     refresh_token: str
+
+class deleteuser_adminRequest(BaseModel):
+    targetUserNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class disablepostRequest(BaseModel):
+    targetPostNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class enablepostRequest(BaseModel):
+    targetPostNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class updateposting_adminRequest(BaseModel):
+    postNumber: int
+    postName: Union[str, None]
+    postDate: Union[str, None]
+    postType: Union[str, None]
+    postCategory: Union[str, None]
+    locationX: Union[float, None]
+    locationY: Union[float, None]
+    content: Union[str, None]
+    disabled: Union[bool, None]
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class deleteposting_adminRequest(BaseModel):
+    postNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str

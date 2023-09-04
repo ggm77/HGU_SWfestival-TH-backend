@@ -49,7 +49,7 @@ async def getPosting(postNumber: int, access_token: Union[str,None], token_type:
 
     return JSONResponse(value)
 
-@router.put("/posting")
+@router.patch("/posting")
 async def updatePosting(updateData: updatepostingRequest):
     userNumber = await decodeToken(updateData.access_token, updateData.refresh_token)
     post = await getPostInfo(updateData.postNumber)
