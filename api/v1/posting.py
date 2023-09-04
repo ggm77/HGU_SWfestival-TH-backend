@@ -7,6 +7,19 @@ from lib.schema import *
 
 router = APIRouter(prefix="/api/v1")
 
+
+@router.get("/posting/list")
+async def getPostingList(lastPostNumber: int | None = None):
+    
+    if(lastPostNumber == None):
+        currentLastNumber = await getLastPostNumber()
+        postList = await getLatestPostList(currentLastNumber, 10)
+    else:
+        postList = await getLatestPostList(lastPostNumber, 10)
+
+    return JSONResponse({"list":postList})
+
+
 @router.post("/posting")
 async def createPosting(postData: createpostingRequest):
     info = jsonable_encoder(postData)
@@ -23,7 +36,7 @@ async def createPosting(postData: createpostingRequest):
     
 
 @router.get("/posting/")
-async def getPosting(postNumber: int, access_token: Union[str,None], token_type: Union[str,None], refresh_token: Union[str,None]):
+async def getPosting(postNumber: int, access_token: str | None = None, token_type: str | None = None, refresh_token: str | None = None):
     if(access_token != None and refresh_token != None):
         try:
             await decodeToken(access_token, refresh_token)

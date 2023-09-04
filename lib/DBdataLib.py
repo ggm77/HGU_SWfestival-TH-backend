@@ -12,6 +12,27 @@ engine = engineconn()
 session = engine.sessionmaker()
 
 
+async def getLastPostNumber():
+    postNumber = list(session.execute(text('SELECT MAX(postNumber) FROM postInfo')).fetchone())
+    session.close()
+    return postNumber[0]
+
+async def getLatestPostList(lastPostNumber, numberOfPost):
+    list = []
+    #What if there is a lot of deleted data?
+    for i in range(numberOfPost):
+        if(lastPostNumber-i != 0):
+            posts = jsonable_encoder(session.query(postInfo).get(lastPostNumber-i))
+            if(posts == None):
+                i -= 1
+            else:
+                list.append(posts)
+        else:
+            break
+    session.close()
+    return list
+
+
 async def getUserInfo(userNumber):
 
     user = jsonable_encoder(session.query(userInfo).get(userNumber))
