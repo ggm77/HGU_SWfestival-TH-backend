@@ -1,14 +1,13 @@
 """
 2023.08.30 started
 
-
 uvicorn main:app --reload --host=0.0.0.0 --port=8000
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.v1 import user, token, verification
+from api.v1 import user, token, verification, posting
 from api.v1.admin import admin
 
 app = FastAPI()
@@ -33,5 +32,7 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(token.router)
 app.include_router(verification.router)
+app.include_router(posting.router)
 app.include_router(admin.router)
+
 

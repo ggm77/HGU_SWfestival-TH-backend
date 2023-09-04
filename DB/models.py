@@ -18,9 +18,21 @@ class userInfo(Base):
     disabled = Column(Boolean, nullable=False)
 
 
-# class posting(Base):
-#     __tablename__ = "posting"
+class postInfo(Base):
+    __tablename__ = "postInfo"
 
+    postNumber = Column(INTEGER, nullable=False, primary_key=True)
+    postName = Column(VARCHAR, nullable=False)
+    postUserNumber = Column(INTEGER, nullable=False)
+    postDate = Column(DATETIME, nullable=False)
+    postType = Column(VARCHAR, nullable=False)
+    postCategory = Column(VARCHAR, nullable=False)
+    locationX = Column(FLOAT, nullable=False)
+    locationY = Column(FLOAT, nullable=False)
+    views = Column(INTEGER, nullable=False)
+    numberOfChat = Column(INTEGER, nullable=False)
+    content = Column(VARCHAR, nullable=False)
+    disabled = Column(Boolean, nullable=False)
 
 # class review(Base):
 #     __tablename__ = "review"

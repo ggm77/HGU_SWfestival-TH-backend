@@ -33,9 +33,16 @@ async def authenticate_user(email, password):
         return -1
     
     user = await getUserInfo(userNumber)
-
-    if(not user):
-        return -1
+    if(user == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(user == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User disabled"
+        )
 
     if(await passwordVerify(password, user["hashed_password"])):
         return 1
@@ -63,6 +70,26 @@ async def registUser(userInfo: dict):
         return user
     else:
         return False
+    
+async def uploadPost(postInfo: dict):
+
+    postInfo["postUserNumber"] = await decodeToken(postInfo["access_token"], postInfo["refresh_token"])
+    postInfo["views"] = 0
+    postInfo["numberOfChat"] = 0
+
+
+    del postInfo["access_token"]
+    del postInfo["token_type"]
+    del postInfo["refresh_token"]
+
+    
+    post = await createPostInfo(postInfo)
+
+    if(post):
+        return post
+    else:
+        return False
+    
 
 async def create_access_token(userNumber):
     data = {"sub":str(userNumber)}
@@ -118,6 +145,16 @@ async def decodeRefreshToken(token: str):
 async def adminVerify(token, refreshToken):
     userNumber = await decodeToken(token, refreshToken)
     info = await getUserInfo(userNumber)
+    if(info == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(info == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User disabled"
+        )
     if(info["userType"] == "admin"):
         return True
     else:

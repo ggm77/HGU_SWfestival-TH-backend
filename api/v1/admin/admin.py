@@ -12,11 +12,21 @@ router = APIRouter(prefix="/api/v1/admin")
 async def disableUser(postData: disableuserRequest):
     userNumber = await decodeToken(postData.access_token, postData.refresh_token)
     info = await getUserInfo(userNumber)
+    if(info == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(info == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User disabled"
+        )
     if(info["userType"] == "admin"):
         param = {"userNumber":postData.targetUserNumber, "disabled":True}
         value = await updateUserInfo(param)
         if(value != 0):
-            return {"result":"success"}
+            return JSONResponse({"result":"success"})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500,
@@ -33,11 +43,21 @@ async def disableUser(postData: disableuserRequest):
 async def enableUser(postData: enableuserRequest):
     userNumber = await decodeToken(postData.access_token, postData.refresh_token)
     info = await getUserInfo(userNumber)
+    if(info == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(info == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User disabled"
+        )
     if(info["userType"] == "admin"):
         param = {"userNumber":postData.targetUserNumber, "disabled":False}
         value = await updateUserInfo(param)
         if(value != 0):
-            return {"result":"success"}
+            return JSONResponse({"result":"success"})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500,
@@ -49,7 +69,7 @@ async def enableUser(postData: enableuserRequest):
             detail="Require admin account."
         )
 
-@router.put("/user")
+@router.patch("/user")
 async def changeUserInfo(postData: changuserinfoRequest):
     if(await adminVerify(postData.admin_access_token, postData.admin_refresh_token)):
         updateData = jsonable_encoder(postData)
@@ -71,7 +91,7 @@ async def changeUserInfo(postData: changuserinfoRequest):
         
         value = await updateUserInfo(updateData)
         if(value != 0):
-            return {"result":"success"}
+            return JSONResponse({"result":"success"})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -82,3 +102,7 @@ async def changeUserInfo(postData: changuserinfoRequest):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Require admin account."
         )
+
+@router.delete("/user")
+async def deleteUser():
+    return

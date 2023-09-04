@@ -35,11 +35,17 @@ async def createAccount(postData: registRequest):
 async def getUserinfo(access_token: str, token_type: str, refresh_token: str):
     userNumber = await decodeToken(access_token, refresh_token)
     user = await getUserInfo(userNumber)
-    if(not user):
+    if(user == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(user == 0):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not found or user disabled."
+            detail="User disabled"
         )
+
     del user["hashed_password"]
 
     return JSONResponse(jsonable_encoder(user))
@@ -49,16 +55,38 @@ async def getUserinfo(access_token: str, token_type: str, refresh_token: str):
 async def updateUserinfo(putData: updateuserRequest):
     userNumber = await decodeToken(putData.access_token, putData.refresh_token)
     info = await getUserInfo(userNumber)
-    if(putData.email != info["email"]):
-        if(await checkUserExist(putData.email)):
+    if(info == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(info == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User disabled"
+        )
+    
+    putData = jsonable_encoder(putData)
+
+    if(putData["email"] != None and putData["email"] != info["email"]):
+        if(await checkUserExist(putData["email"])):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email aready exist."
             )
-    putData = jsonable_encoder(putData)
-    putData["hashed_password"] = getHashedPassword(putData["password"])
+        
+    if(putData["password"] != None):
+        putData["hashed_password"] = getHashedPassword(putData["password"])
+        del putData["password"]
+
+    keyList = list(putData.keys())
+    for i in range(len(keyList)):
+        if(putData[keyList[i]] == None):
+            del putData[keyList[i]]
+
+    
+    
     putData["userNumber"] = userNumber
-    del putData["password"]
     del putData["access_token"]
     del putData["token_type"]
     del putData["refresh_token"]
@@ -84,7 +112,7 @@ async def deleteUser(deleteData: deleteuserRequest):
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Delete userInfo failed from DB."
+                    detail="Failed to delete userInfo in DB."
                 )
         else:
             raise HTTPException(

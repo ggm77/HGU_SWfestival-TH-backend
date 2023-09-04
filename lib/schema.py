@@ -38,10 +38,10 @@ class deleteuserRequest(BaseModel):
     refresh_token: str
 
 class updateuserRequest(BaseModel):
-    email: str
-    password: str
-    locationX: float
-    locationY: float
+    email: Union[str, None]
+    password: Union[str, None]
+    locationX: Union[float, None]
+    locationY: Union[float, None]
     access_token: str
     token_type: str
     refresh_token: str
@@ -78,3 +78,32 @@ class changuserinfoRequest(BaseModel):
     admin_access_token: str
     admin_token_type: str
     admin_refresh_token: str
+
+class createpostingRequest(BaseModel):
+    postName: str
+    postType: str
+    postCategory: str
+    locationX: float
+    locationY: float
+    content: str
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class updatepostingRequest(BaseModel):
+    postNumber: int
+    postName: str
+    postType: str
+    postCategory: str
+    locationX: float
+    locationY: float
+    content: str
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class deletepostingRequest(BaseModel):
+    postNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
