@@ -1,5 +1,5 @@
 secrets.json
-assets/profilePicture/
+assets/**
 __pycache__
 DB/__pycache__
 api/v1/__pycache__
