@@ -21,6 +21,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 1
 
+
 async def passwordVerify(plain, hashed):
     return pwd_context.verify(plain, hashed)
 
@@ -162,6 +163,7 @@ async def adminVerify(token, refreshToken):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Require admin account."
         )
+    
     
 
 def getHashedPassword(password):

@@ -17,20 +17,19 @@ async def getLastPostNumber():
     session.close()
     return postNumber[0]
 
-async def getLatestPostList(lastPostNumber, numberOfPost):
-    list = []
-    #What if there is a lot of deleted data?
+async def getLatestPostList(targetPostNumber, numberOfPost):
+    #Return including number targetPostNumber
+    postList = []
+    targetPostNumber += 1
     for i in range(numberOfPost):
-        if(lastPostNumber-i != 0):
-            posts = jsonable_encoder(session.query(postInfo).get(lastPostNumber-i))
-            if(posts == None):
-                i -= 1
-            else:
-                list.append(posts)
+        if(targetPostNumber != 1):
+            value = int(list(session.execute(text(f"SELECT MAX(postNumber) FROM postInfo WHERE postNumber < {targetPostNumber}")))[0][0])
+            postList.append(value)
+            targetPostNumber = value
         else:
             break
     session.close()
-    return list
+    return postList
 
 
 async def getUserInfo(userNumber):
@@ -54,6 +53,27 @@ async def getPostInfo(postNumber):
         return 0
     return post
 
+async def getPostPictureDB(postNumber, pictureNumber):#filter need change
+    
+    try:
+        file = session.query(postPicture).filter(postPicture.postNumber == postNumber and postPicture.pictureNumber == pictureNumber).first()
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    session.close()
+    return file
+
+async def getPostPictureList(postNumber):
+    try:
+        pictureList = list(list(session.execute(text(f"SELECT pictureNumber FROM postPicture WHERE postNumber = {postNumber};")))[0])
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    session.close()
+    return pictureList
+
 async def createUserInfo(user: dict):
     data = userInfo(
         username = user["username"],
@@ -67,8 +87,13 @@ async def createUserInfo(user: dict):
         disabled = False
     )
 
-    session.add(data)
-    session.commit()
+    try:
+        session.add(data)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
     session.close()
 
     return await getUserInfo(await emailToUserNumber(user["email"]))
@@ -88,12 +113,35 @@ async def createPostInfo(post: dict):
         disabled = False
     )
 
-    session.add(data)
-    session.commit()
-    postNumber = list(session.execute(text('SELECT LAST_INSERT_ID() AS id')).fetchone())
+    try:
+        session.add(data)
+        session.commit()
+        postNumber = list(session.execute(text('SELECT LAST_INSERT_ID() AS id')).fetchone())
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
     session.close()
 
     return await getPostInfo(postNumber[0])
+
+
+async def createPostPicture(file, postNumber, pictureNumber):
+    data = postPicture(
+        postNumber = postNumber,
+        pictureNumber = pictureNumber,
+        data = file
+    )
+
+    try:
+        session.add(data)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    session.commit()
+    return True
 
 
 async def emailToUserNumber(requestEmail) -> int:
@@ -151,6 +199,17 @@ async def deletePostInfo(postNumber: int):
         print("[DB Error]", e)
         session.close()
         return 0
+    
+async def deletePostPicture(postNumber, pictureNumber):
+    try:
+        session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber and postPicture.pictureNumber == pictureNumber).first())
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
     
 async def viewsPlusOne(postNumber: int):
     try:

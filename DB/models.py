@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean, VARCHAR, FLOAT, INTEGER, DATETIME
+from sqlalchemy import Column, Boolean, VARCHAR, FLOAT, INTEGER, DATETIME, PickleType, BLOB
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -33,6 +33,15 @@ class postInfo(Base):
     numberOfChat = Column(INTEGER, nullable=False)
     content = Column(VARCHAR, nullable=False)
     disabled = Column(Boolean, nullable=False)
+
+
+class postPicture(Base):
+    __tablename__ = "postPicture"
+
+    id = Column(INTEGER, nullable=False, primary_key=True)
+    postNumber = Column(INTEGER, nullable=False)
+    pictureNumber = Column(INTEGER, nullable=False)
+    data = Column(BLOB, nullable=False)
 
 # class review(Base):
 #     __tablename__ = "review"

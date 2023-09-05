@@ -145,3 +145,8 @@ class deleteposting_adminRequest(BaseModel):
     access_token: str
     token_type: str
     refresh_token: str
+
+
+class deletepictureRequest(BaseModel):
+    postNumber: int
+    pictureNumber: int

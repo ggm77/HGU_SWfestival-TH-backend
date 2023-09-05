@@ -4,4 +4,8 @@ __pycache__
 DB/__pycache__
 api/v1/__pycache__
 api/v1/admin/__pycache__
+api/v1/posting/__pycache__
+api/v1/token/__pycache__
+api/v1/user/__pycache__
+api/v1/verification/__pycache__
 lib/__pycache__
