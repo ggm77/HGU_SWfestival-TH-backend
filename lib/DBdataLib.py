@@ -53,10 +53,10 @@ async def getPostInfo(postNumber):
         return 0
     return post
 
-async def getPostPictureDB(postNumber, pictureNumber):#filter need change
+async def getPostPictureDB(postNumber, pictureNumber):
     
     try:
-        file = session.query(postPicture).filter(postPicture.postNumber == postNumber and postPicture.pictureNumber == pictureNumber).first()
+        file = session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first()
     except Exception as e:
         print("[DB Error]", e)
         session.close()
@@ -66,13 +66,18 @@ async def getPostPictureDB(postNumber, pictureNumber):#filter need change
 
 async def getPostPictureList(postNumber):
     try:
-        pictureList = list(list(session.execute(text(f"SELECT pictureNumber FROM postPicture WHERE postNumber = {postNumber};")))[0])
+        pictureList = (list(session.execute(text(f"SELECT pictureNumber FROM postPicture WHERE postNumber = {postNumber};"))))
     except Exception as e:
         print("[DB Error]", e)
         session.close()
         return False
     session.close()
-    return pictureList
+
+    result = []
+    for i in range(len(pictureList)):
+        result.append(pictureList[i][0])
+
+    return result
 
 async def createUserInfo(user: dict):
     data = userInfo(
@@ -132,6 +137,10 @@ async def createPostPicture(file, postNumber, pictureNumber):
         pictureNumber = pictureNumber,
         data = file
     )
+
+    if(pictureNumber in await getPostPictureList(postNumber)):
+        print("[DB Error] pictureNumber already in there.")
+        return False
 
     try:
         session.add(data)
@@ -202,7 +211,7 @@ async def deletePostInfo(postNumber: int):
     
 async def deletePostPicture(postNumber, pictureNumber):
     try:
-        session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber and postPicture.pictureNumber == pictureNumber).first())
+        session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first())
         session.commit()
         session.close()
         return True

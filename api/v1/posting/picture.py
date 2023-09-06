@@ -1,6 +1,5 @@
-from fastapi import APIRouter, HTTPException, status, File, UploadFile, Response
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, HTTPException, status, UploadFile, Response
+from fastapi.responses import JSONResponse
 
 from lib.lib import *
 from lib.schema import *
@@ -34,12 +33,22 @@ async def getPostPicture(postNumber: int, pictureName: int):
         )
 
 
-"""
-https://fastapi.tiangolo.com/tutorial/request-files/
-file request
-"""
-@router.post("/picture/{postNumber}")#pictureNumber need change!!
-async def createPicture(file: UploadFile | None = None, postNumber: str = None, pictureNumber : int = None):
+@router.post("/picture")
+async def createPicture(
+    file: UploadFile | None,
+    postNumber: int,
+    pictureNumber: int,
+    access_token: str,
+    token_type: str,
+    refresh_token: str
+):
+
+    if(not await postUserVerify(access_token, refresh_token, postNumber)):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Do not have permission"
+        )
+
     if(not file):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,7 +65,7 @@ async def createPicture(file: UploadFile | None = None, postNumber: str = None, 
             detail="No pictureNumber sent."
         )
     else:
-        value = await createPostPicture(await file.read(), int(postNumber), pictureNumber)
+        value = await createPostPicture(await file.read(), postNumber, pictureNumber)
         if(value):
             return JSONResponse({"filename": file.filename})
         else:
@@ -64,10 +73,66 @@ async def createPicture(file: UploadFile | None = None, postNumber: str = None, 
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to upload picture to DB."
             )
+        
+
+@router.put("/picture")
+async def updatePicture(
+    file: UploadFile | None,
+    postNumber: int,
+    pictureNumber: int,
+    access_token: str,
+    token_type: str,
+    refresh_token: str
+):
+    if(not await postUserVerify(access_token, refresh_token, postNumber)):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Do not have permission"
+        )
+
+    if(not file):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No upload file sent."
+        )
+    elif(postNumber == None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No postNumber sent."
+        )
+    elif(pictureNumber == None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No pictureNumber sent."
+        )
+    else:
+        deletevalue = await deletePostPicture(postNumber, pictureNumber)
+        if(deletevalue):
+            value = await createPostPicture(await file.read(), postNumber, pictureNumber)
+            if(value):
+                return JSONResponse({"filename": file.filename})
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to upload picture to DB."
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete picture from DB."
+            )
+        
     
 
 @router.delete("/picture")
 async def deletePicture(deleteData: deletepictureRequest):
+
+    if(not await postUserVerify(deleteData.access_token, deleteData.refresh_token, deleteData.postNumber)):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Do not have permission"
+        )
+
     value = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
     if(value):
         return JSONResponse({"result":"success"})

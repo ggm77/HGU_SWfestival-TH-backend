@@ -23,6 +23,12 @@ class registResponse(BaseModel):#not use
     point: int
     disabled: bool
 
+class uploadpostpictureRequest(BaseModel):
+    postNumber: int
+    pictureNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
 
 class userinfoRequest(BaseModel):
     access_token: str
@@ -150,3 +156,6 @@ class deleteposting_adminRequest(BaseModel):
 class deletepictureRequest(BaseModel):
     postNumber: int
     pictureNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str

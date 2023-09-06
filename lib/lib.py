@@ -164,6 +164,14 @@ async def adminVerify(token, refreshToken):
             detail="Require admin account."
         )
     
+async def postUserVerify(token, refreshToken, postNumber):
+    postUserNumber = (await getPostInfo(postNumber))["postUserNumber"]
+    tokenUserNumber = await decodeToken(token, refreshToken)
+    if(str(postUserNumber) == tokenUserNumber):
+        return True
+    else:
+        return False
+    
     
 
 def getHashedPassword(password):
