@@ -43,6 +43,14 @@ class postPicture(Base):
     pictureNumber = Column(INTEGER, nullable=False)
     data = Column(BLOB, nullable=False)
 
+
+class userProfilePicture(Base):
+    __tablename__ = "userProfilePicture"
+
+    userNumber = Column(INTEGER, nullable=False, primary_key=True)
+    data = Column(BLOB, nullable=False)
+
+
 # class review(Base):
 #     __tablename__ = "review"
 

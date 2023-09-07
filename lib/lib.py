@@ -5,6 +5,8 @@ from datetime import timedelta, datetime
 from jose import jwt, exceptions
 import json
 import os
+from PIL import Image
+import io
 
 from lib.DBdataLib import *
 
@@ -20,6 +22,15 @@ SECRET_KEY = secrets["server"]["SECRET_KEY"]
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 1
+
+async def getDefaultProfilePicture():
+    path = os.path.dirname(os.path.abspath(__file__))[:-3]
+    path += "assets/defaultProfileImage/defaultProfile.png"
+    img = Image.open(path, mode='r')
+
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    return buffer.getvalue()
 
 
 async def passwordVerify(plain, hashed):
@@ -172,8 +183,13 @@ async def postUserVerify(token, refreshToken, postNumber):
     else:
         return False
     
+async def userNumberVerify(token, refreshToken, userNumber):
+    tokenUserNumber = await decodeToken(token, refreshToken)
+    if(str(userNumber) == tokenUserNumber):
+        return True
+    else:
+        return False
     
 
 def getHashedPassword(password):
     return pwd_context.hash(password)
-

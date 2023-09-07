@@ -35,6 +35,17 @@ async def enableUser(postData: enableuserRequest):
             status_code=status.HTTP_500,
             detail="Failed to update userInfo in DB."
         )
+    
+@router.delete("/user/picture")
+async def deleteUserPicture(deleteData: deleteuserpicture_adminRequest):
+    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    if(await deleteUserProfilePicture(deleteData.userNumber)):
+        return JSONResponse({"result":"success"})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete picture from DB."
+        )
 
 @router.patch("/user")
 async def changeUserInfo(postData: changuserinfoRequest):
@@ -70,6 +81,12 @@ async def changeUserInfo(postData: changuserinfoRequest):
 async def deleteUser(deleteData: deleteuser_adminRequest):
     await adminVerify(deleteData.access_token, deleteData.refresh_token)
     value = await deleteUserInfo(deleteData.targetUserNumber)
+    if(await getUserPictureDB(deleteData.targetUserNumber)):
+        if(not await deleteUserProfilePicture(deleteData.targetUserNumber)):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete picture from DB."
+            )
     if(value == 1):
         return JSONResponse({"result":"success"})
     else:

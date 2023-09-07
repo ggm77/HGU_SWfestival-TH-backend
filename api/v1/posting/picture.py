@@ -46,7 +46,7 @@ async def createPicture(
     if(not await postUserVerify(access_token, refresh_token, postNumber)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Do not have permission"
+            detail="Do not have permission."
         )
 
     if(not file):
@@ -133,8 +133,7 @@ async def deletePicture(deleteData: deletepictureRequest):
             detail="Do not have permission"
         )
 
-    value = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
-    if(value):
+    if(await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)):
         return JSONResponse({"result":"success"})
     else:
         raise HTTPException(

@@ -3,9 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from lib.lib import *
-from lib.lib import authenticate_user
 from lib.schema import *
-from lib.schema import registRequest
 
 router = APIRouter(prefix="/api/v1")
 
@@ -107,6 +105,14 @@ async def deleteUser(deleteData: deleteuserRequest):
         userNumber = await emailToUserNumber(deleteData.email)
         if(str(userNumber) == await decodeToken(deleteData.access_token, deleteData.refresh_token)):
             value = await deleteUserInfo(userNumber)
+
+            if(await getUserPictureDB(userNumber)):
+                if(not await deleteUserProfilePicture(userNumber)):
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to delete picture from DB."
+                    )
+
             if(value == 1):
                 return JSONResponse({"result":"success"})
             else:

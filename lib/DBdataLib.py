@@ -6,7 +6,11 @@ from DB.database import engineconn
 from DB.models import *
 from DB.models import userInfo
 
+"""
 
+what if % or \ in there?
+
+"""
 
 engine = engineconn()
 session = engine.sessionmaker()
@@ -53,17 +57,6 @@ async def getPostInfo(postNumber):
         return 0
     return post
 
-async def getPostPictureDB(postNumber, pictureNumber):
-    
-    try:
-        file = session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first()
-    except Exception as e:
-        print("[DB Error]", e)
-        session.close()
-        return False
-    session.close()
-    return file
-
 async def getPostPictureList(postNumber):
     try:
         pictureList = (list(session.execute(text(f"SELECT pictureNumber FROM postPicture WHERE postNumber = {postNumber};"))))
@@ -78,6 +71,30 @@ async def getPostPictureList(postNumber):
         result.append(pictureList[i][0])
 
     return result
+
+async def getPostPictureDB(postNumber, pictureNumber):
+    
+    try:
+        file = session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first()
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    session.close()
+    return file
+
+
+async def getUserPictureDB(userNumber):
+    try:
+        file = session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first()
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    session.close()
+    return file
+
+
 
 async def createUserInfo(user: dict):
     data = userInfo(
@@ -149,7 +166,28 @@ async def createPostPicture(file, postNumber, pictureNumber):
         print("[DB Error]", e)
         session.close()
         return False
-    session.commit()
+    session.close()
+    return True
+
+
+async def createUserPictureDB(file, userNumber):
+    data = userProfilePicture(
+        userNumber = userNumber,
+        data = file
+    )
+
+    if(await getUserPictureDB(userNumber)):
+        print("[DB Error] userNumber already in DB.")
+        return False
+
+    try:
+        session.add(data)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    session.close()
     return True
 
 
@@ -212,6 +250,17 @@ async def deletePostInfo(postNumber: int):
 async def deletePostPicture(postNumber, pictureNumber):
     try:
         session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first())
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    
+async def deleteUserProfilePicture(userNumber):
+    try:
+        session.delete(session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first())
         session.commit()
         session.close()
         return True

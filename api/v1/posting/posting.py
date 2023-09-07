@@ -110,6 +110,11 @@ async def deletePosting(deleteData: deletepostingRequest):
 
     if(str(post["postUserNumber"]) == userNumber):
         value = await deletePostInfo(deleteData.postNumber)
+        if(not await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete picture from DB."
+            )
         if(value == 1):
             return JSONResponse({"result":"success"})
         else:

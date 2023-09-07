@@ -146,6 +146,13 @@ class updateposting_adminRequest(BaseModel):
     token_type: str
     refresh_token: str
 
+class deletepostpicture_adminRequest(BaseModel):
+    postNumber: int
+    pictureNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
 class deleteposting_adminRequest(BaseModel):
     postNumber: int
     access_token: str
@@ -156,6 +163,18 @@ class deleteposting_adminRequest(BaseModel):
 class deletepictureRequest(BaseModel):
     postNumber: int
     pictureNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class deleteuserpictureRequest(BaseModel):
+    userNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class deleteuserpicture_adminRequest(BaseModel):
+    userNumber: int
     access_token: str
     token_type: str
     refresh_token: str
