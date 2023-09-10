@@ -15,6 +15,8 @@ class userInfo(Base):
     locationX = Column(FLOAT, nullable=False)#Latitude : 위도
     locationY = Column(FLOAT, nullable=False)#longitude : 경도
     point = Column(INTEGER, nullable=False)
+    rateSum = Column(INTEGER, nullable=False)
+    countOfRate = Column(INTEGER, nullable=False)
     disabled = Column(Boolean, nullable=False)
 
 
@@ -51,8 +53,17 @@ class userProfilePicture(Base):
     data = Column(BLOB, nullable=False)
 
 
-# class review(Base):
-#     __tablename__ = "review"
+class reviewInfo(Base):
+    __tablename__ = "reviewInfo"
+
+    reviewNumber = Column(INTEGER, nullable=False, primary_key=True)
+    authorUserNumber = Column(INTEGER, nullable=False)
+    targetUserNumber = Column(INTEGER, nullable=False)
+    reviewDate = Column(DATETIME, nullable=False)
+    rate = Column(INTEGER, nullable=False)
+    content = Column(VARCHAR, nullable=False)
+    postNumber = Column(INTEGER, nullable=False)
+    disabled = Column(Boolean, nullable=False)
 
 
 # class chat(Base):

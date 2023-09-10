@@ -30,6 +30,15 @@ class uploadpostpictureRequest(BaseModel):
     token_type: str
     refresh_token: str
 
+class createreviewRequest(BaseModel):
+    targetUserNumber: int
+    rate: int
+    content: str
+    postNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
 class userinfoRequest(BaseModel):
     access_token: str
     token_type: str
@@ -80,6 +89,8 @@ class changuserinfoRequest(BaseModel):
     locationX: Union[float, None]
     locationY: Union[float, None]
     point: Union[int, None]
+    rateSum: Union[int, None]
+    countOfRate: Union[int, None]
     disabled: Union[bool, None]
     admin_access_token: str
     admin_token_type: str
@@ -108,6 +119,19 @@ class updatepostingRequest(BaseModel):
     token_type: str
     refresh_token: str
 
+class updatereviewRequest(BaseModel):
+    reviewNumber: int
+    authorUserNumber: Union[int, None]
+    targetUserNumber: Union[int, None]
+    reviewDate: Union[str, None]
+    rate: Union[int, None]
+    content: Union[str, None]
+    postNumber: Union[int, None]
+    disabled: Union[bool, None]
+    access_token: str
+    token_type: str
+    refresh_token: str
+
 class deletepostingRequest(BaseModel):
     postNumber: int
     access_token: str
@@ -131,6 +155,21 @@ class enablepostRequest(BaseModel):
     access_token: str
     token_type: str
     refresh_token: str
+
+
+class disablereviewRequest(BaseModel):
+    reviewNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+
+class enablereviewRequest(BaseModel):
+    reviewNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
 
 class updateposting_adminRequest(BaseModel):
     postNumber: int
@@ -175,6 +214,12 @@ class deleteuserpictureRequest(BaseModel):
 
 class deleteuserpicture_adminRequest(BaseModel):
     userNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class deletereviewRequest(BaseModel):
+    reviewNumber: int
     access_token: str
     token_type: str
     refresh_token: str

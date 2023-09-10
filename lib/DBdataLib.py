@@ -6,11 +6,6 @@ from DB.database import engineconn
 from DB.models import *
 from DB.models import userInfo
 
-"""
-
-what if % or \ in there?
-
-"""
 
 engine = engineconn()
 session = engine.sessionmaker()
@@ -95,6 +90,44 @@ async def getUserPictureDB(userNumber):
     return file
 
 
+async def getReviewDB_reviewNumber(reviewNumber):
+    review = jsonable_encoder(session.query(reviewInfo).get(reviewNumber))
+    session.close()
+    if(review == None):
+        return -1
+    elif(review["disabled"] == True):
+        return 0
+    else:
+        return review
+
+
+async def getReviewDB_author(authorUserNumber, postNumber):
+    try:
+        review = session.query(reviewInfo).filter(reviewInfo.authorUserNumber == authorUserNumber, reviewInfo.postNumber == postNumber).first()
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    session.close()
+    return review
+
+
+async def getReviewListDB(userNumber):
+    reviewList = []
+    try:
+        reviewList = list(session.execute(text(f"SELECT reviewNumber FROM reviewInfo WHERE targetUserNumber = {userNumber}")))
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    session.close()
+    for i in range(len(reviewList)):
+        reviewList[i] = reviewList[i][0]
+    return reviewList
+
+
+
+
 
 async def createUserInfo(user: dict):
     data = userInfo(
@@ -106,6 +139,8 @@ async def createUserInfo(user: dict):
         locationX = user["locationX"],
         locationY = user["locationY"],
         point = 0,
+        rateSum = 0,
+        countOfRate = 0,
         disabled = False
     )
 
@@ -138,7 +173,7 @@ async def createPostInfo(post: dict):
     try:
         session.add(data)
         session.commit()
-        postNumber = list(session.execute(text('SELECT LAST_INSERT_ID() AS id')).fetchone())
+        postNumber = list(session.execute(text('SELECT LAST_INSERT_ID() FROM postInfo')).fetchone())
     except Exception as e:
         print("[DB Error]", e)
         session.close()
@@ -191,6 +226,28 @@ async def createUserPictureDB(file, userNumber):
     return True
 
 
+async def createReviewDB(reviewData: dict):
+    data = reviewInfo(
+        authorUserNumber = reviewData["authorUserNumber"],
+        targetUserNumber = reviewData["targetUserNumber"],
+        reviewDate = datetime.now(),
+        rate = reviewData["rate"],
+        content = reviewData["content"],
+        postNumber = reviewData["postNumber"],
+        disabled = False
+    )
+    try:
+        session.add(data)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    session.close()
+
+    reviewNumber = list(session.execute(text("SELECT LAST_INSERT_ID() FROM reviewInfo")).fetchone())
+    return await getReviewDB_reviewNumber(reviewNumber[0])
+
 async def emailToUserNumber(requestEmail) -> int:
     try:
         result = (session.query(userInfo).filter(userInfo.email == requestEmail).all())[0].userNumber
@@ -224,6 +281,16 @@ async def updatePostInfo(post: dict):
     session.close()
     return post["postNumber"]
 
+async def updateReviewDB(review: dict):
+    try:
+        session.query(reviewInfo).filter(reviewInfo.reviewNumber == review["reviewNumber"]).update(review)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return 0
+    session.close()
+    return review["reviewNumber"]
 
 async def deleteUserInfo(userNumber: int):
     try:
@@ -258,6 +325,17 @@ async def deletePostPicture(postNumber, pictureNumber):
         session.close()
         return False
     
+async def deletePostPictureAll(postNumber):
+    try:
+        session.execute(text(f"DELETE FROM postPicture WHERE postNumber = {str(postNumber)};"))
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    
 async def deleteUserProfilePicture(userNumber):
     try:
         session.delete(session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first())
@@ -269,6 +347,18 @@ async def deleteUserProfilePicture(userNumber):
         session.close()
         return False
     
+async def deleteReviewDB(reviewNumber: int):
+    try:
+        session.delete(session.query(reviewInfo).filter(reviewInfo.reviewNumber == reviewNumber).first())
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]", e)
+        session.close()
+        return False
+    
+
 async def viewsPlusOne(postNumber: int):
     try:
         session.execute(text(f"update postInfo set views = postInfo.views + 1 where postNumber = {postNumber};"))
@@ -279,3 +369,29 @@ async def viewsPlusOne(postNumber: int):
         print("[DB Error]", e)
         session.close()
         return 0
+    
+async def ratePlus(userNumber: int, rate: int):
+    try:
+        session.execute(text(f"update userInfo set rateSum  = userInfo.rateSum + {rate} where userNumber = {userNumber}"))
+        session.execute(text(f"update userInfo set countOfRate = userInfo.countOfRate + 1 where userNumber = {userNumber}"))
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    
+
+#not use
+# async def rateSubtrack(userNumber: int, rate: int):
+#     try:
+#         session.execute(text(f"update userInfo set rateSum = userInfo.rateSum - {rate} where userNumber = {userNumber}"))
+#         session.execute(text(f"update userInfo set contOfRate = userInfo.countOfRate - 1 where userNumber = {userNumber}"))
+#         session.commit()
+#         session.close()
+#         return True
+#     except Exception as e:
+#         print("[DB Error]",e)
+#         session.close()
+#         return False

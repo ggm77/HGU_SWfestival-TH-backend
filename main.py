@@ -7,10 +7,11 @@ uvicorn main:app --reload --host=0.0.0.0 --port=8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.v1.admin import posting as admin_posting, user as admin_user
+from api.v1.admin import posting as admin_posting, user as admin_user, review as admin_review
 from api.v1.posting import posting, list as posting_list, picture as posting_picture
 from api.v1.token import token
 from api.v1.user import user, picture as user_picture
+from api.v1.review import review, list as review_list
 from api.v1.verification import verification
 
 app = FastAPI()
@@ -25,7 +26,8 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    #allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,7 +41,10 @@ app.include_router(verification.router)
 app.include_router(posting.router)
 app.include_router(posting_list.router)
 app.include_router(posting_picture.router)
+app.include_router(review.router)
+app.include_router(review_list.router)
 app.include_router(admin_user.router)
 app.include_router(admin_posting.router)
+app.include_router(admin_review.router)
 
 

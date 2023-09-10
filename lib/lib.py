@@ -102,6 +102,53 @@ async def uploadPost(postInfo: dict):
     else:
         return False
     
+async def uploadReview(data: dict):
+
+    post = await getPostInfo(data["postNumber"])
+    if(post == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Post not found."
+        )
+    elif(post == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Post disabled."
+        )
+    
+    if(post["postUserNumber"] != data["targetUserNumber"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="targetUserNumber not correct."
+        )
+
+    data["authorUserNumber"] = await decodeToken(data["access_token"], data["refresh_token"])
+    if(str(post["postUserNumber"]) == data["authorUserNumber"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot write review on your own post."
+        )
+
+    del data["access_token"]
+    del data["token_type"]
+    del data["refresh_token"]
+    if(await getReviewDB_author(data["authorUserNumber"], data["postNumber"]) == None):
+        review = await createReviewDB(data)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="review already in DB."
+        )
+    if(review):
+        if(await ratePlus(data["targetUserNumber"], data["rate"])):
+            return review
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="review not counted. (review uploaded)"
+        )
+    else:
+        return False
+
 
 async def create_access_token(userNumber):
     data = {"sub":str(userNumber)}
@@ -154,7 +201,7 @@ async def decodeRefreshToken(token: str):
     return payload
 
 
-async def adminVerify(token, refreshToken):
+async def adminVerify(token: str, refreshToken: str):
     userNumber = await decodeToken(token, refreshToken)
     info = await getUserInfo(userNumber)
     if(info == -1):

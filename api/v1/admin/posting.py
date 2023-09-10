@@ -77,13 +77,15 @@ async def updatePosting(updateData: updateposting_adminRequest):
 async def deletePosting(deleteData: deleteposting_adminRequest):
     await adminVerify(deleteData.access_token, deleteData.refresh_token)
     value = await deletePostInfo(deleteData.postNumber)
-    if(not await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete picture from DB."
-        )
+    
     if(value == 1):
-        return JSONResponse({"result":"success"})
+        if(not await deletePostPictureAll(deleteData.postNumber)):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete picture from DB. (posting deleted)"
+            )
+        else:
+            return JSONResponse({"result":"success"})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

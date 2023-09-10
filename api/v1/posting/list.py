@@ -16,4 +16,10 @@ async def getPostingList(targetPostNumber: int | None = None):
     else:
         postList = await getLatestPostList(targetPostNumber, 10)
 
-    return JSONResponse({"postList":postList})
+    if(postList):
+        return JSONResponse({"postList":postList})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get posting list."
+        )
