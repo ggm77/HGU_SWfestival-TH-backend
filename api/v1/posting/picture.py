@@ -35,7 +35,7 @@ async def getPostPicture(postNumber: int, pictureName: int):
 
 @router.post("/picture")
 async def createPicture(
-    file: UploadFile | None,
+    file: Union[UploadFile, None],
     postNumber: int,
     pictureNumber: int,
     access_token: str,
@@ -77,7 +77,7 @@ async def createPicture(
 
 @router.put("/picture")
 async def updatePicture(
-    file: UploadFile | None,
+    file: Union[UploadFile, None],
     postNumber: int,
     pictureNumber: int,
     access_token: str,

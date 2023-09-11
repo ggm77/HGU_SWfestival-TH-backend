@@ -24,7 +24,7 @@ async def createPosting(postData: createpostingRequest):
     
 
 @router.get("/posting")
-async def getPosting(postNumber: int, access_token: str | None = None, token_type: str | None = None, refresh_token: str | None = None):
+async def getPosting(postNumber: int, access_token: Union[str, None] = None, token_type: Union[str, None] = None, refresh_token: Union[str, None] = None):
     if(access_token != None and refresh_token != None):
         try:
             await decodeToken(access_token, refresh_token)

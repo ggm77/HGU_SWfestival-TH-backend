@@ -19,7 +19,7 @@ async def getUserPicture(userNumber: int):
 
 @router.post("/picture")
 async def createUserPicture(
-    file : UploadFile | None,
+    file : Union[UploadFile, None],
     userNumber : int,
     access_token: str,
     token_type: str,
@@ -48,7 +48,7 @@ async def createUserPicture(
 
 @router.put("/picture")
 async def updateUserPicture(
-    file : UploadFile | None,
+    file : Union[UploadFile, None],
     userNumber : int,
     access_token: str,
     token_type: str,

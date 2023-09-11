@@ -8,7 +8,7 @@ router = APIRouter(prefix="/api/v1/posting")
 
 
 @router.get("/list")
-async def getPostingList(targetPostNumber: int | None = None):
+async def getPostingList(targetPostNumber: Union[int, None] = None):
     
     if(targetPostNumber == None):
         currentLastNumber = await getLastPostNumber()
