@@ -7,4 +7,6 @@ api/v1/posting/__pycache__
 api/v1/token/__pycache__
 api/v1/user/__pycache__
 api/v1/verification/__pycache__
+api/v1/ws/__pycache__
 lib/__pycache__
+assets/defaultProfileImage/*

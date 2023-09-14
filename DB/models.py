@@ -66,9 +66,23 @@ class reviewInfo(Base):
     disabled = Column(Boolean, nullable=False)
 
 
-# class chat(Base):
-#     __tablename__ = "chat"
+class chatInfo(Base):
+    __tablename__ = "chatInfo"
+
+    chatRoomNumber = Column(INTEGER, nullable=False, primary_key=True)
+    postNumber = Column(INTEGER, nullable=False)
+    postUserNumber = Column(INTEGER, nullable=False)
+    chatterNumber = Column(INTEGER, nullable=False)
+    date = Column(DATETIME, nullable=False)
 
 
-# class chatHistory(Base):
-#     __tablename__ = "chatHistory"
+class chatRecodeInfo(Base):
+    __tablename__ = "chatRecodeInfo"
+
+    id = Column(INTEGER, nullable=False, primary_key=True)
+    chatRoomNumber = Column(INTEGER, nullable=False)
+    messageNumber = Column(INTEGER, nullable=False)
+    authorUserNumber = Column(INTEGER, nullable=False)
+    text = Column(VARCHAR, nullable=False)
+    date = Column(DATETIME, nullable=False)
+    readChat = Column(Boolean, nullable=False)

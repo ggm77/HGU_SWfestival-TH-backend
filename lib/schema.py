@@ -39,6 +39,13 @@ class createreviewRequest(BaseModel):
     token_type: str
     refresh_token: str
 
+class createchatroomRequest(BaseModel):
+    postUserNumber: int
+    postNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
 class userinfoRequest(BaseModel):
     access_token: str
     token_type: str
@@ -132,6 +139,7 @@ class updatereviewRequest(BaseModel):
     token_type: str
     refresh_token: str
 
+
 class deletepostingRequest(BaseModel):
     postNumber: int
     access_token: str
@@ -146,6 +154,12 @@ class deleteuser_adminRequest(BaseModel):
 
 class disablepostRequest(BaseModel):
     targetPostNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
+
+class deletechatroom_adminRequest(BaseModel):
+    chatRoomNumber: int
     access_token: str
     token_type: str
     refresh_token: str

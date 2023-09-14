@@ -126,6 +126,17 @@ async def getReviewListDB(userNumber):
     return reviewList
 
 
+async def getChatRoomInfoDB(chatRoomNumber):
+    try:
+        chatRoomInfo = jsonable_encoder(session.query(chatInfo).get(chatRoomNumber))
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    session.close()
+    return chatRoomInfo
+
+
 
 
 
@@ -248,6 +259,25 @@ async def createReviewDB(reviewData: dict):
     reviewNumber = list(session.execute(text("SELECT LAST_INSERT_ID() FROM reviewInfo")).fetchone())
     return await getReviewDB_reviewNumber(reviewNumber[0])
 
+async def createChatRoomDB(chatRoomData: dict):
+    data = chatInfo(
+        postNumber = chatRoomData["postNumber"],
+        postUserNumber = chatRoomData["postUserNumber"],
+        chatterNumber = chatRoomData["userNumber"],
+        date = datetime.now()
+    )
+    try:
+        session.add(data)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    session.close()
+
+    chatRoomNumber = list(session.execute(text("SELECT LAST_INSERT_ID() FROM chatInfo")).fetchone())
+    return await getChatRoomInfoDB(chatRoomNumber[0])
+
 async def emailToUserNumber(requestEmail) -> int:
     try:
         result = (session.query(userInfo).filter(userInfo.email == requestEmail).all())[0].userNumber
@@ -291,6 +321,18 @@ async def updateReviewDB(review: dict):
         return 0
     session.close()
     return review["reviewNumber"]
+
+#not use
+async def updateChatRoomInfoDB(chatRoom: dict):
+    try:
+        session.query(chatInfo).filter(chatInfo.chatRoomNumber == chatRoom["chatRoomNumber"]).update(chatRoom)
+        session.commit()
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    session.close()
+    return chatRoom["chatRoomNumber"]
 
 async def deleteUserInfo(userNumber: int):
     try:
@@ -355,6 +397,18 @@ async def deleteReviewDB(reviewNumber: int):
         return True
     except Exception as e:
         print("[DB Error]", e)
+        session.close()
+        return False
+    
+
+async def deleteChatRoomInfoDB(chatRoomNumber):
+    try:
+        session.delete(session.query(chatInfo).filter(chatInfo.chatRoomNumber == chatRoomNumber).first())
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]",e)
         session.close()
         return False
     

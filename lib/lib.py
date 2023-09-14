@@ -7,6 +7,7 @@ import json
 import os
 from PIL import Image
 import io
+import time
 
 from lib.DBdataLib import *
 
@@ -150,8 +151,10 @@ async def uploadReview(data: dict):
         return False
 
 
-async def create_access_token(userNumber):
-    data = {"sub":str(userNumber)}
+async def create_access_token(target):
+    if(type(target) != str):
+        target = str(target)
+    data = {"sub":target}
     expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = data.copy()
@@ -163,8 +166,10 @@ async def create_access_token(userNumber):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def create_refresh_token(userNumber):
-    data = {"sub":str(userNumber)}
+async def create_refresh_token(target):
+    if(type(target) != str):
+        target = str(target)
+    data = {"sub":target}
     expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
     to_encode = data.copy()
@@ -187,7 +192,6 @@ async def decodeToken(token: str, refresh_token: str):
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     return payload.get("sub")
 
 async def decodeRefreshToken(token: str):
@@ -199,6 +203,35 @@ async def decodeRefreshToken(token: str):
             detail=str(e),
         )
     return payload
+
+
+async def decodeToken_ws(token: str, refresh_token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except exceptions.ExpiredSignatureError:
+        payload = await decodeRefreshToken_ws(refresh_token)
+    except Exception as e:
+        print("[Token Error]",e)
+        return False
+    return payload.get("sub")
+
+async def decodeRefreshToken_ws(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception as e:
+        print("[Token Error]",e)
+        return False
+    return payload
+
+
+async def createChatRoom(data: dict):
+    
+    value = await createChatRoomDB(data)
+
+    if(value):
+        return value
+    else:
+        return False
 
 
 async def adminVerify(token: str, refreshToken: str):
