@@ -186,6 +186,12 @@ async def decodeToken(token: str, refresh_token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except exceptions.ExpiredSignatureError:
         payload = await decodeRefreshToken(refresh_token)
+        if(payload == False):
+            raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -210,6 +216,8 @@ async def decodeToken_ws(token: str, refresh_token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except exceptions.ExpiredSignatureError:
         payload = await decodeRefreshToken_ws(refresh_token)
+        if(payload == False):
+            return False
     except Exception as e:
         print("[Token Error]",e)
         return False
@@ -232,6 +240,7 @@ async def createChatRoom(data: dict):
         return value
     else:
         return False
+    
 
 
 async def adminVerify(token: str, refreshToken: str):

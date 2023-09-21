@@ -19,7 +19,6 @@ from api.v1.verification import verification
 from api.v1.ws import ws
 from api.v1.chat import chat
 
-
 app = FastAPI()
 
 origins = [
@@ -27,7 +26,8 @@ origins = [
     "http://localhost:3000",
     "localhost:3000",
     "http://raspinas.iptime.org:3000",
-    "raspinas.iptime.org:3000"
+    "raspinas.iptime.org:3000",
+    "172.17.218.152:51175"
 ]
 
 app.add_middleware(
@@ -63,4 +63,9 @@ templates = Jinja2Templates(directory="assets/testFrontPage")
 @app.get("/test/wsTest")
 async def wbTest(request : Request):
     return  templates.TemplateResponse("testWS.html",{"request":request})
+
+
+@app.get("/test")
+async def test():
+    return {"test":"success"}
 

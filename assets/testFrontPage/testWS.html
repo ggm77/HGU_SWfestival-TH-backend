@@ -9,11 +9,16 @@
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Send</button>
         </form>
+        <br>
+        <form action="" onsubmit="getMessage(event)">
+            <button>getMessage</button>
+        </form>
         <ul id='messages'>
         </ul>
         <script>
-            var ws = new WebSocket("ws://172.17.200.74:8000/api/v1/ws?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNjk0Njg5OTA0fQ.xNmphTjEK1eGoTZQKCigchhnczDDixqKQ7MW6DJ-LiQ&token_type=bearer&refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicmVmcmVzaCI6InRva2VuIiwiZXhwIjoxNjk0Nzc1NDA0fQ.MXpJ-Fvzl78zsHQHoTZOIrd0Fc8MakTDEVBloffwLI0");
+            var ws = new WebSocket("ws://127.0.0.1:64000/api/v1/ws?chatRoomNumber=2&chat_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyLTEiLCJleHAiOjE2OTUyOTgxMTB9.5PWxLUbsfgf2NgdE28ze4nk-i2kx2VxdbPMBwTxg0Ic&token_type=bearer&chat_refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyLTEiLCJyZWZyZXNoIjoidG9rZW4iLCJleHAiOjE2OTUzODM2MTB9.4JmVLCf11dzRmtaKfqWnkgL33n78M7N8ql5EG7LLqD0");
             ws.onmessage = function(event) {
+                console.log("recive")
                 var messages = document.getElementById('messages')
                 var message = document.createElement('li')
                 var content = document.createTextNode(event.data)
@@ -21,9 +26,17 @@
                 messages.appendChild(message)
             };
             function sendMessage(event) {
+
+                
+                
                 var input = document.getElementById("messageText")
-                ws.send(input.value)
+                ws.send("1|"+input.value)
+                
                 input.value = ''
+                event.preventDefault()
+            }
+            function getMessage(event) {
+                ws.send("get|")
                 event.preventDefault()
             }
         </script>

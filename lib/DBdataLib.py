@@ -2,13 +2,25 @@ from fastapi.encoders import jsonable_encoder
 from datetime import timedelta, datetime
 from sqlalchemy import text
 
-from DB.database import engineconn
+from DB.database import engineconn, rabbitmq
 from DB.models import *
 from DB.models import userInfo
 
 
 engine = engineconn()
 session = engine.sessionmaker()
+
+rabbitmqClient = rabbitmq()
+
+async def chatSetup(routing_key):
+    await rabbitmqClient.setup(routing_key)
+
+async def createChat(routing_key, body):
+    await rabbitmqClient.create_chat(routing_key=routing_key, body=body)
+
+async def getChat(routing_key):
+    result = await rabbitmqClient.get_chat(routing_key=routing_key)
+    return result
 
 
 async def getLastPostNumber():
@@ -404,6 +416,18 @@ async def deleteReviewDB(reviewNumber: int):
 async def deleteChatRoomInfoDB(chatRoomNumber):
     try:
         session.delete(session.query(chatInfo).filter(chatInfo.chatRoomNumber == chatRoomNumber).first())
+        session.commit()
+        session.close()
+        return True
+    except Exception as e:
+        print("[DB Error]",e)
+        session.close()
+        return False
+    
+#use not yet
+async def deleteChatRecodeDB(chatRoomNumber):
+    try:
+        session.delete(session.query(chatRecodeInfo).filter(chatRecodeInfo.chatRoomNumber == chatRoomNumber).all())
         session.commit()
         session.close()
         return True
