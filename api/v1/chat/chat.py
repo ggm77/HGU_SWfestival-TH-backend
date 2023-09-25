@@ -65,7 +65,8 @@ async def get_chat_room(
     chat_access_token = await create_access_token(str(chatRoomNumber)+"-"+str(userNumber))
     chat_refresh_token = await create_refresh_token(str(chatRoomNumber)+"-"+str(userNumber))
 
-    await chatSetup(str(chatRoomNumber)+"-"+str(userNumber))
+    await chatSetup(str(chatRoomNumber)+"."+str(userNumber))
+    await chatRecodeSetup()
 
     return JSONResponse({"chat_access_token":chat_access_token,"token_type":"bearer","chat_refresh_token":chat_refresh_token,"data":chatRoomInfo})
 

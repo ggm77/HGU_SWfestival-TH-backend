@@ -48,6 +48,14 @@ class rabbitmq:
         chan.queue_bind(exchange='chat.exchange.'+routing_key,queue='chat.queue.'+routing_key, routing_key='chat.routing.'+routing_key)
         return
     
+    async def setupBackup(self):
+        conn = pika.BlockingConnection(pika.ConnectionParameters(self.__url, self.__port, self.__vhost, self.__cred))
+        chan = conn.channel()
+        chan.exchange_declare(exchange='chatRecode.exchange', exchange_type='direct',durable=True)
+        chan.queue_declare(queue='chatRecode.queue')
+        chan.queue_bind(exchange='chatRecode.exchange',queue='chatRecode.queue', routing_key='chatRecode.routing')
+        return
+    
     async def create_chat(self, routing_key: str, body):
         conn = pika.BlockingConnection(pika.ConnectionParameters(self.__url, self.__port, self.__vhost, self.__cred))
         chan = conn.channel()
@@ -59,15 +67,31 @@ class rabbitmq:
         conn.close()
         return
     
-    def on_message(ch, method_frame, header_frame, body):
-        print('Received %s' % body)
 
-    async def get_chat(self, routing_key: str):
+    async def backup_chat(self, body):
+        conn = pika.BlockingConnection(pika.ConnectionParameters(self.__url, self.__port, self.__vhost, self.__cred))
+        chan = conn.channel()
+        chan.basic_publish(
+            exchange = 'chatRecode.exchange',
+            routing_key = "chatRecode.routing",
+            body = body
+        )
+        conn.close()
+        return
+    
+
+    
+    # def on_message(ch, method_frame, header_frame, body):
+    #     print('Received %s' % body)
+    
+    #not use
+    async def get_chat(self, routing_key: str, callback: Function):
         conn = pika.BlockingConnection(pika.ConnectionParameters(self.__url, self.__port, self.__vhost, self.__cred))
         chan = conn.channel()
         chan.basic_consume(
             queue = "chat.queue."+routing_key,
-            on_message_callback = rabbitmq.on_message,
+            #on_message_callback = rabbitmq.on_message,
+            on_message_callback = await callback,
             auto_ack = True
         )
         print('Consumer is starting...')

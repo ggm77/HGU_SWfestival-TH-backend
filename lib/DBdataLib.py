@@ -15,11 +15,17 @@ rabbitmqClient = rabbitmq()
 async def chatSetup(routing_key):
     await rabbitmqClient.setup(routing_key)
 
+async def chatRecodeSetup():
+    await rabbitmqClient.setupBackup()
+
 async def createChat(routing_key, body):
     await rabbitmqClient.create_chat(routing_key=routing_key, body=body)
 
-async def getChat(routing_key):
-    result = await rabbitmqClient.get_chat(routing_key=routing_key)
+async def backupChat(body):
+    await rabbitmqClient.backup_chat(body=body)
+
+async def getChat(routing_key, callback):
+    result = await rabbitmqClient.get_chat(routing_key=routing_key, callback=callback)
     return result
 
 

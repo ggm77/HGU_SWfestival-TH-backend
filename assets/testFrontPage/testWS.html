@@ -16,7 +16,7 @@
         <ul id='messages'>
         </ul>
         <script>
-            var ws = new WebSocket("ws://127.0.0.1:64000/api/v1/ws?chatRoomNumber=2&chat_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyLTEiLCJleHAiOjE2OTUyOTgxMTB9.5PWxLUbsfgf2NgdE28ze4nk-i2kx2VxdbPMBwTxg0Ic&token_type=bearer&chat_refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyLTEiLCJyZWZyZXNoIjoidG9rZW4iLCJleHAiOjE2OTUzODM2MTB9.4JmVLCf11dzRmtaKfqWnkgL33n78M7N8ql5EG7LLqD0");
+            var ws = new WebSocket("ws://127.0.0.1:64000/api/v1/ws/createchat?chatRoomNumber=2&chat_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyLTEiLCJleHAiOjE2OTU2NjUwNzB9.DxVFoN9EQdEyhK2F5hLBmSCHoowKni0BBWGWZjPiYl8&token_type=bearer&chat_refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyLTEiLCJyZWZyZXNoIjoidG9rZW4iLCJleHAiOjE2OTU3NTA1NzB9.q9neiEfACkhUn9_scnXS9MMndnyVHh_R1BuLpxXbL24");
             ws.onmessage = function(event) {
                 console.log("recive")
                 var messages = document.getElementById('messages')

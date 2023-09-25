@@ -60,9 +60,15 @@ app.include_router(chat.router)
 
 
 templates = Jinja2Templates(directory="assets/testFrontPage")
-@app.get("/test/wsTest")
+@app.get("/test/wsTest/createchat")
 async def wbTest(request : Request):
     return  templates.TemplateResponse("testWS.html",{"request":request})
+
+#not use - do it on frontend
+# @app.get("/test/wsTest/getchat")
+# async def wbTestGetchat(request: Request):
+#     return templates.TemplateResponse("testWSgetchat.html",{"request":request})
+
 
 
 @app.get("/test")
