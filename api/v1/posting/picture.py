@@ -42,8 +42,10 @@ async def createPicture(
     token_type: str,
     refresh_token: str
 ):
+    
+    tokenDict = await postUserVerify(access_token, refresh_token, postNumber)
 
-    if(not await postUserVerify(access_token, refresh_token, postNumber)):
+    if(not tokenDict):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Do not have permission."
@@ -67,7 +69,7 @@ async def createPicture(
     else:
         value = await createPostPicture(await file.read(), postNumber, pictureNumber)
         if(value):
-            return JSONResponse({"filename": file.filename})
+            return JSONResponse({"data":{"filename": file.filename},"token":tokenDict})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -84,7 +86,8 @@ async def updatePicture(
     token_type: str,
     refresh_token: str
 ):
-    if(not await postUserVerify(access_token, refresh_token, postNumber)):
+    tokenDict = await postUserVerify(access_token, refresh_token, postNumber)
+    if(not tokenDict):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Do not have permission"
@@ -110,7 +113,7 @@ async def updatePicture(
         if(deletevalue):
             value = await createPostPicture(await file.read(), postNumber, pictureNumber)
             if(value):
-                return JSONResponse({"filename": file.filename})
+                return JSONResponse({"data":{"filename": file.filename},"token":tokenDict})
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -126,15 +129,15 @@ async def updatePicture(
 
 @router.delete("/picture")
 async def deletePicture(deleteData: deletepictureRequest):
-
-    if(not await postUserVerify(deleteData.access_token, deleteData.refresh_token, deleteData.postNumber)):
+    tokenDict = await postUserVerify(deleteData.access_token, deleteData.refresh_token, deleteData.postNumber)
+    if(not tokenDict):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Do not have permission"
         )
 
     if(await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

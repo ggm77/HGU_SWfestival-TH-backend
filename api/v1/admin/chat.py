@@ -10,10 +10,10 @@ router = APIRouter(prefix="/api/v1/admin")
 
 @router.delete("/chat")
 async def delete_chat_room(deleteData: deletechatroom_adminRequest):
-    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
     if(await deleteChatRoomInfoDB(deleteData.chatRoomNumber)):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"}, "token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

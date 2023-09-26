@@ -29,9 +29,10 @@ async def createAccount(postData: registRequest):
         )
     
 
-@router.get("/user/")
+@router.get("/user")
 async def getUserinfo(access_token: str, token_type: str, refresh_token: str):
-    userNumber = await decodeToken(access_token, refresh_token)
+    payload = await decodeToken(access_token, refresh_token)
+    userNumber = payload.get("sub")
     user = await getUserInfo(userNumber)
     if(user == -1):
         raise HTTPException(
@@ -46,12 +47,16 @@ async def getUserinfo(access_token: str, token_type: str, refresh_token: str):
 
     del user["hashed_password"]
 
-    return JSONResponse(jsonable_encoder(user))
+    if(payload.get("type")=="refresh"):
+        return JSONResponse({"data":jsonable_encoder(user),"token":await create_token(payload.get("sub"))})
+    else:
+        return JSONResponse({"data":jsonable_encoder(user),"token":{"access_token":access_token,"refresh_token":refresh_token}})
     
 
 @router.patch("/user")
 async def updateUserinfo(putData: updateuserRequest):
-    userNumber = await decodeToken(putData.access_token, putData.refresh_token)
+    payload = await decodeToken(putData.access_token, putData.refresh_token)
+    userNumber = payload.get("sub")
     info = await getUserInfo(userNumber)
     if(info == -1):
         raise HTTPException(
@@ -90,7 +95,10 @@ async def updateUserinfo(putData: updateuserRequest):
     del putData["refresh_token"]
     value = await updateUserInfo(putData)
     if(value != 0):
-        return await getUserInfo(value)
+        if(payload.get("type")=="refresh"):
+            return JSONResponse({"data":await getUserInfo(value),"token":await create_token(payload.get("sub"))})
+        else:
+            return JSONResponse({"data":await getUserInfo(value),"token":{"access_token":putData.access_token,"refresh_token":putData.refresh_token}})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -103,7 +111,8 @@ async def deleteUser(deleteData: deleteuserRequest):
     authUser = await authenticate_user(deleteData.email, deleteData.password)
     if(authUser == 1):
         userNumber = await emailToUserNumber(deleteData.email)
-        if(str(userNumber) == await decodeToken(deleteData.access_token, deleteData.refresh_token)):
+        payload = await decodeToken(deleteData.access_token, deleteData.refresh_token)
+        if(str(userNumber) == payload.get("sub")):
             value = await deleteUserInfo(userNumber)
 
             if(await getUserPictureDB(userNumber)):
@@ -114,7 +123,10 @@ async def deleteUser(deleteData: deleteuserRequest):
                     )
 
             if(value == 1):
-                return JSONResponse({"result":"success"})
+                if(payload.get("type")=="refresh"):
+                    return JSONResponse({"data":{"result":"success"},"token":await create_token(payload.get("sub"))})
+                else:
+                    return JSONResponse({"data":{"result":"success"},"token":{"access_token":deleteData.access_token,"refresh_token":deleteData.refresh_token}})
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

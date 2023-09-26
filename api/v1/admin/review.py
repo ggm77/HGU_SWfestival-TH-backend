@@ -11,10 +11,10 @@ router = APIRouter(prefix="/api/v1/admin")
 
 @router.post("/disableReview")
 async def disableReview(postData: disablereviewRequest):
-    await adminVerify(postData.access_token, postData.refresh_token)
+    tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
 
     if(await updateReviewDB({"reviewNumber":postData.reviewNumber, "disabled":True})):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -24,10 +24,10 @@ async def disableReview(postData: disablereviewRequest):
 
 @router.post("/enableReview")
 async def enableReview(postData: enablereviewRequest):
-    await adminVerify(postData.access_token, postData.refresh_token)
+    tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
 
     if(await updateReviewDB({"reviewNumber":postData.reviewNumber, "disabled":False})):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -37,7 +37,7 @@ async def enableReview(postData: enablereviewRequest):
 
 @router.patch("/review")
 async def updateReview(updateData: updatereviewRequest):
-    await adminVerify(updateData.access_token, updateData.refresh_token)
+    tokenDict = await adminVerify(updateData.access_token, updateData.refresh_token)
 
     keyList = list(updateData.keys())
     for i in range(len(keyList)):
@@ -48,7 +48,7 @@ async def updateReview(updateData: updatereviewRequest):
     del updateData["refresh_token"]
 
     if(await updateReviewDB(updateData)):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -59,10 +59,10 @@ async def updateReview(updateData: updatereviewRequest):
 
 @router.delete("/review")
 async def deleteReview(deleteData: deletereviewRequest):
-    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
     if(await deleteReviewDB(deleteData.reviewNumber)):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

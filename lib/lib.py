@@ -24,6 +24,90 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 1
 
+async def create_access_token(target):
+    if(type(target) != str):
+        target = str(target)
+    data = {"sub":target}
+    expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"type":"access","exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def create_refresh_token(target):
+    if(type(target) != str):
+        target = str(target)
+    data = {"sub":target}
+    expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=1)
+    to_encode.update({"type":"refresh", "exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def create_token(target):
+    return {"access_token":await create_access_token(target),"refresh_token":await create_refresh_token(target)}
+
+async def decodeToken(token: str, refresh_token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except exceptions.ExpiredSignatureError:
+        payload = await decodeRefreshToken(refresh_token)
+        if(payload == False):
+            raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
+async def decodeRefreshToken(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+    return payload
+
+
+async def decodeToken_ws(token: str, refresh_token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except exceptions.ExpiredSignatureError:
+        payload = await decodeRefreshToken_ws(refresh_token)
+        if(payload == False):
+            return False
+    except Exception as e:
+        print("[Token Error]",e)
+        return False
+    return payload
+
+async def decodeRefreshToken_ws(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception as e:
+        print("[Token Error]",e)
+        return False
+    return payload
+
+
 async def getDefaultProfilePicture():
     path = os.path.dirname(os.path.abspath(__file__))[:-3]
     path += "assets/defaultProfileImage/defaultProfile.png"
@@ -63,7 +147,7 @@ async def authenticate_user(email, password):
         return 0
     
 
-async def checkUserExist(email) -> bool:
+async def checkUserExist(email)->bool:
     userNumber = await emailToUserNumber(email)
 
     if(userNumber):
@@ -85,8 +169,8 @@ async def registUser(userInfo: dict):
         return False
     
 async def uploadPost(postInfo: dict):
-
-    postInfo["postUserNumber"] = await decodeToken(postInfo["access_token"], postInfo["refresh_token"])
+    payload = await decodeToken(postInfo["access_token"], postInfo["refresh_token"])
+    postInfo["postUserNumber"] = payload.get("sub")
     postInfo["views"] = 0
     postInfo["numberOfChat"] = 0
 
@@ -99,7 +183,10 @@ async def uploadPost(postInfo: dict):
     post = await createPostInfo(postInfo)
 
     if(post):
-        return post
+        if(payload.get("type")=="refresh"):
+            return {"data":post,"token":await create_token(payload.get("sub"))}
+        else:
+            return {"data":post,"token":{"access_token":postInfo["access_token"],"refresh_token":postInfo["refresh_token"]}}
     else:
         return False
     
@@ -122,8 +209,8 @@ async def uploadReview(data: dict):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="targetUserNumber not correct."
         )
-
-    data["authorUserNumber"] = await decodeToken(data["access_token"], data["refresh_token"])
+    payload = await decodeToken(data["access_token"], data["refresh_token"])
+    data["authorUserNumber"] = payload.get("sub")
     if(str(post["postUserNumber"]) == data["authorUserNumber"]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -142,7 +229,10 @@ async def uploadReview(data: dict):
         )
     if(review):
         if(await ratePlus(data["targetUserNumber"], data["rate"])):
-            return review
+            if(payload.get("type")=="refresh"):
+                return {"data":review,"token":await create_token(payload.get("sub"))}
+            else:
+                return {"data":review,"token":{"access_token":data["access_token"],"refresh_token":data["refresh_token"]}}
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="review not counted. (review uploaded)"
@@ -151,85 +241,6 @@ async def uploadReview(data: dict):
         return False
 
 
-async def create_access_token(target):
-    if(type(target) != str):
-        target = str(target)
-    data = {"sub":target}
-    expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"type":"access","exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-async def create_refresh_token(target):
-    if(type(target) != str):
-        target = str(target)
-    data = {"sub":target}
-    expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(days=1)
-    to_encode.update({"type":"refresh", "exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-async def decodeToken(token: str, refresh_token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except exceptions.ExpiredSignatureError:
-        payload = await decodeRefreshToken(refresh_token)
-        if(payload == False):
-            raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return payload.get("sub")
-
-async def decodeRefreshToken(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
-    return payload
-
-
-async def decodeToken_ws(token: str, refresh_token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except exceptions.ExpiredSignatureError:
-        payload = await decodeRefreshToken_ws(refresh_token)
-        if(payload == False):
-            return False
-    except Exception as e:
-        print("[Token Error]",e)
-        return False
-    return payload.get("sub")
-
-async def decodeRefreshToken_ws(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except Exception as e:
-        print("[Token Error]",e)
-        return False
-    return payload
 
 
 async def createChatRoom(data: dict):
@@ -244,7 +255,8 @@ async def createChatRoom(data: dict):
 
 
 async def adminVerify(token: str, refreshToken: str):
-    userNumber = await decodeToken(token, refreshToken)
+    payload = await decodeToken(token, refreshToken)
+    userNumber = payload.get("sub")
     info = await getUserInfo(userNumber)
     if(info == -1):
         raise HTTPException(
@@ -257,7 +269,10 @@ async def adminVerify(token: str, refreshToken: str):
             detail="User disabled"
         )
     if(info["userType"] == "admin"):
-        return True
+        if(payload.get("type") == "refresh"):
+            return {"access_token":await create_access_token(userNumber),"refresh_token":await create_refresh_token(userNumber)}
+        else:
+            return {"access_token":token,"refresh_token":refreshToken}
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -266,16 +281,24 @@ async def adminVerify(token: str, refreshToken: str):
     
 async def postUserVerify(token, refreshToken, postNumber):
     postUserNumber = (await getPostInfo(postNumber))["postUserNumber"]
-    tokenUserNumber = await decodeToken(token, refreshToken)
+    payload = await decodeToken(token, refreshToken)
+    tokenUserNumber = payload.get("sub")
     if(str(postUserNumber) == tokenUserNumber):
-        return True
+        if(payload.get("type")=="refresh"):
+            return await create_token(tokenUserNumber)
+        else:
+            return {"access_token":token,"refresh_token":refreshToken}
     else:
         return False
     
 async def userNumberVerify(token, refreshToken, userNumber):
-    tokenUserNumber = await decodeToken(token, refreshToken)
+    payload = await decodeToken(token, refreshToken)
+    tokenUserNumber = payload.get("sub")
     if(str(userNumber) == tokenUserNumber):
-        return True
+        if(payload.get("type")=="refresh"):
+            return await create_token(payload.get("sub"))
+        else:
+            return {"access_token":token,"refresh_token":refreshToken}
     else:
         return False
     

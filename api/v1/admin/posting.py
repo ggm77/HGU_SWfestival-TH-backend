@@ -9,11 +9,11 @@ router = APIRouter(prefix="/api/v1/admin")
 
 @router.post("/disablePost")
 async def disablePost(postData: disablepostRequest):
-    await adminVerify(postData.access_token, postData.refresh_token)
+    tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"postNumber":postData.targetPostNumber, "disabled":True}
     value = await updatePostInfo(param)
     if(value != 0):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500,
@@ -23,11 +23,11 @@ async def disablePost(postData: disablepostRequest):
 
 @router.post("/enablePost")
 async def enablePost(postData: enablepostRequest):
-    await adminVerify(postData.access_token, postData.refresh_token)
+    tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"postNumber":postData.targetPostNumber, "disabled":False}
     value = await updatePostInfo(param)
     if(value != 0):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500,
@@ -37,11 +37,11 @@ async def enablePost(postData: enablepostRequest):
 
 @router.delete("/posting/picture")
 async def deletePicture(deleteData: deletepostpicture_adminRequest):
-    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
     value = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
     if(value):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -51,7 +51,7 @@ async def deletePicture(deleteData: deletepostpicture_adminRequest):
 
 @router.patch("/posting")
 async def updatePosting(updateData: updateposting_adminRequest):
-    await adminVerify(updateData.access_token, updateData.refresh_token)
+    tokenDict = await adminVerify(updateData.access_token, updateData.refresh_token)
     updateData = jsonable_encoder(updateData)
 
     keyList = list(updateData.keys())
@@ -65,7 +65,7 @@ async def updatePosting(updateData: updateposting_adminRequest):
 
     value = await updatePostInfo(updateData)
     if(value != 0):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -75,7 +75,7 @@ async def updatePosting(updateData: updateposting_adminRequest):
 
 @router.delete("/posting")
 async def deletePosting(deleteData: deleteposting_adminRequest):
-    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
     value = await deletePostInfo(deleteData.postNumber)
     
     if(value == 1):
@@ -85,7 +85,7 @@ async def deletePosting(deleteData: deleteposting_adminRequest):
                 detail="Failed to delete picture from DB. (posting deleted)"
             )
         else:
-            return JSONResponse({"result":"success"})
+            return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

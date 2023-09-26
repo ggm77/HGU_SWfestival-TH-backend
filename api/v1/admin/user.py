@@ -10,11 +10,11 @@ router = APIRouter(prefix="/api/v1/admin")
 
 @router.post("/disableUser")
 async def disableUser(postData: disableuserRequest):
-    await adminVerify(postData.access_token, postData.refresh_token)
+    tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"userNumber":postData.targetUserNumber, "disabled":True}
     value = await updateUserInfo(param)
     if(value != 0):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500,
@@ -25,11 +25,11 @@ async def disableUser(postData: disableuserRequest):
 
 @router.post("/enableUser")
 async def enableUser(postData: enableuserRequest):
-    await adminVerify(postData.access_token, postData.refresh_token)
+    tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"userNumber":postData.targetUserNumber, "disabled":False}
     value = await updateUserInfo(param)
     if(value != 0):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500,
@@ -38,18 +38,38 @@ async def enableUser(postData: enableuserRequest):
     
 @router.delete("/user/picture")
 async def deleteUserPicture(deleteData: deleteuserpicture_adminRequest):
-    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
     if(await deleteUserProfilePicture(deleteData.userNumber)):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete picture from DB."
         )
+    
+@router.get("/user/{userNumber}")
+async def getUserinfo(userNumber: int, access_token: str, token_type: str, refresh_token: str):
+    tokenDict = await adminVerify(access_token, refresh_token)
+    user = await getUserInfo(userNumber)
+    if(user == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found."
+        )
+    elif(user == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User disabled"
+        )
+
+    del user["hashed_password"]
+
+    return JSONResponse({"data":jsonable_encoder(user),"token":tokenDict})
+    
 
 @router.patch("/user")
 async def changeUserInfo(postData: changuserinfoRequest):
-    await adminVerify(postData.admin_access_token, postData.admin_refresh_token)
+    tokenDict = await adminVerify(postData.admin_access_token, postData.admin_refresh_token)
     updateData = jsonable_encoder(postData)
 
     if(updateData["email"] != None):
@@ -69,7 +89,7 @@ async def changeUserInfo(postData: changuserinfoRequest):
     
     value = await updateUserInfo(updateData)
     if(value != 0):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -79,7 +99,7 @@ async def changeUserInfo(postData: changuserinfoRequest):
 
 @router.delete("/user")
 async def deleteUser(deleteData: deleteuser_adminRequest):
-    await adminVerify(deleteData.access_token, deleteData.refresh_token)
+    tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
     value = await deleteUserInfo(deleteData.targetUserNumber)
     if(await getUserPictureDB(deleteData.targetUserNumber)):
         if(not await deleteUserProfilePicture(deleteData.targetUserNumber)):
@@ -88,7 +108,7 @@ async def deleteUser(deleteData: deleteuser_adminRequest):
                 detail="Failed to delete picture from DB."
             )
     if(value == 1):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

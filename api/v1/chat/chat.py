@@ -11,7 +11,8 @@ router = APIRouter(prefix="/api/v1")
 @router.post("/chat")
 async def create_chat_room(postData: createchatroomRequest):
 
-    userNumber = await decodeToken(postData.access_token, postData.refresh_token)
+    payload = await decodeToken(postData.access_token, postData.refresh_token)
+    userNumber = payload.get("sub")
     
     if((await getPostInfo(postData.postNumber))["postUserNumber"] != postData.postUserNumber):
         raise HTTPException(
@@ -30,7 +31,10 @@ async def create_chat_room(postData: createchatroomRequest):
             detail="Failed to creatChatRoom."
         )
     
-    return JSONResponse(value)
+    if(payload.get("type")=="refresh"):
+        return JSONResponse({"data":value,"token":await create_token(userNumber)})
+    else:
+        return JSONResponse({"data":value,"token":{"access_token":postData.access_token,"refresh_token":postData.refresh_token}})
 
 
 @router.get("/chat")
@@ -46,7 +50,8 @@ async def get_chat_room(
             detail="Parameters are not satisfied."
         )
     
-    userNumber = await decodeToken(access_token, refresh_token)
+    payload = await decodeToken(access_token, refresh_token)
+    userNumber = payload.get("sub")
 
     chatRoomInfo = await getChatRoomInfoDB(chatRoomNumber)
 
@@ -68,7 +73,35 @@ async def get_chat_room(
     await chatSetup(str(chatRoomNumber)+"."+str(userNumber))
     await chatRecodeSetup()
 
-    return JSONResponse({"chat_access_token":chat_access_token,"token_type":"bearer","chat_refresh_token":chat_refresh_token,"data":chatRoomInfo})
+    if(payload.get("type")=="refresh"):
+        return JSONResponse(
+            {
+                "data":
+                {
+                    "chat_access_token":chat_access_token,
+                    "token_type":"bearer",
+                    "chat_refresh_token":chat_refresh_token,
+                    "data":chatRoomInfo
+                },
+                "token":await create_token(userNumber)
+            }
+        )
+    else:
+        return JSONResponse(
+            {
+                "data":
+                {
+                    "chat_access_token":chat_access_token,
+                    "token_type":"bearer",
+                    "chat_refresh_token":chat_refresh_token,
+                    "data":chatRoomInfo
+                },
+                "token":{
+                    "access_token":access_token,
+                    "refresh_token":refresh_token
+                }
+            }
+        )
 
 
 

@@ -42,8 +42,8 @@ async def create_chat_ws(
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
     
-    
-    tokenChatRoomNumberAndUserNumber = await decodeToken_ws(chat_access_token, chat_refresh_token)
+    payload = await decodeToken_ws(chat_access_token, chat_refresh_token)
+    tokenChatRoomNumberAndUserNumber = payload.get("sub")
     if(tokenChatRoomNumberAndUserNumber == False):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -57,6 +57,9 @@ async def create_chat_ws(
     
     
     await websocket.accept()
+
+    if(payload.get("type")=="refresh"):
+        await websocket.send_text({"token":await create_token(payload.get("sub"))})
     
     try:
         # change all of "readChat" to True

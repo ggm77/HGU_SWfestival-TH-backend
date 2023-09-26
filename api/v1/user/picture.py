@@ -30,10 +30,10 @@ async def createUserPicture(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No upload file sent."
         )
-
-    if(await userNumberVerify(access_token, refresh_token, userNumber)):
+    tokenDict = await userNumberVerify(access_token, refresh_token, userNumber)
+    if(tokenDict):
         if(await createUserPictureDB(await file.read(), userNumber)):
-            return JSONResponse({"result":"success"})
+            return JSONResponse({"data":{"result":"success"},"token":tokenDict})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -54,7 +54,8 @@ async def updateUserPicture(
     token_type: str,
     refresh_token: str
 ):
-    if(not await userNumberVerify(access_token, refresh_token, userNumber)):
+    tokenDict = await userNumberVerify(access_token, refresh_token, userNumber)
+    if(not tokenDict):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Do not have permission"
@@ -66,39 +67,33 @@ async def updateUserPicture(
             detail="No upload file sent."
         )
 
-    if(await userNumberVerify(access_token, refresh_token, userNumber)):
-        if(await deleteUserProfilePicture(userNumber)):
-            if(await createUserPictureDB(await file.read(), userNumber)):
-                return JSONResponse({"result":"success"})
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to upload picture to DB."
-                )
+    if(await deleteUserProfilePicture(userNumber)):
+        if(await createUserPictureDB(await file.read(), userNumber)):
+            return JSONResponse({"data":{"result":"success"},"token":tokenDict})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete picture from DB."
+                detail="Failed to upload picture to DB."
             )
-        
     else:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Do not have permission."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete picture from DB."
         )
-    
+
     
 
 @router.delete("/picture")
 async def deleteUserPicture(deleteData: deleteuserpictureRequest):
-    if(not await userNumberVerify(deleteData.access_token, deleteData.refresh_token, deleteData.userNumber)):
+    tokenDict = await userNumberVerify(deleteData.access_token, deleteData.refresh_token, deleteData.userNumber)
+    if(not tokenDict):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Do not have permission"
         )
 
     if(await deleteUserProfilePicture(deleteData.userNumber)):
-        return JSONResponse({"result":"success"})
+        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

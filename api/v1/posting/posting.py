@@ -27,7 +27,7 @@ async def createPosting(postData: createpostingRequest):
 async def getPosting(postNumber: int, access_token: Union[str, None] = None, token_type: Union[str, None] = None, refresh_token: Union[str, None] = None):
     if(access_token != None and refresh_token != None):
         try:
-            await decodeToken(access_token, refresh_token)
+            payload = await decodeToken(access_token, refresh_token)
         except:
             print("Access token error.")
             pass
@@ -48,11 +48,18 @@ async def getPosting(postNumber: int, access_token: Union[str, None] = None, tok
             detail="Post disabled."
         )
 
-    return JSONResponse(value)
+    if(access_token != None and refresh_token != None):
+        if(payload.get("type")=="refresh"):
+            return JSONResponse({"data":value,"token":await create_token(payload.get("sub"))})
+        else:
+            return JSONResponse({"data":value,"token":{"access_token":access_token,"refresh_token":refresh_token}})
+    else:
+        return JSONResponse({"data":value,"token":None})
 
 @router.patch("/posting")
 async def updatePosting(updateData: updatepostingRequest):
-    userNumber = await decodeToken(updateData.access_token, updateData.refresh_token)
+    payload = await decodeToken(updateData.access_token, updateData.refresh_token)
+    userNumber = payload.get("sub")
     post = await getPostInfo(updateData.postNumber)
 
     if(post == -1):
@@ -76,7 +83,10 @@ async def updatePosting(updateData: updatepostingRequest):
 
         value = await updatePostInfo(data)
         if(value != 0):
-            return await getPostInfo(value)
+            if(payload.get("type")=="refresh"):
+                return JSONResponse({"data":await getPostInfo(value),"token":await create_token(payload.get("sub"))})
+            else:
+                return JSONResponse({"data":await getPostInfo(value),"token":{"access_token":updateData.access_token,"refresh_token":updateData.refresh_token}})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -93,7 +103,8 @@ async def updatePosting(updateData: updatepostingRequest):
 
 @router.delete("/posting")
 async def deletePosting(deleteData: deletepostingRequest):
-    userNumber = await decodeToken(deleteData.access_token, deleteData.refresh_token)
+    payload = await decodeToken(deleteData.access_token, deleteData.refresh_token)
+    userNumber = payload.get("sub")
     post = await getPostInfo(deleteData.postNumber)
 
     if(post == -1):
@@ -117,7 +128,7 @@ async def deletePosting(deleteData: deletepostingRequest):
                     detail="Failed to delete picture from DB. (posting deleted)"
                 )
             else:
-                return JSONResponse({"result":"success"})
+                return JSONResponse({"data":{"result":"success"},"token":await create_token(payload.get("sub"))})
         else:
             raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
