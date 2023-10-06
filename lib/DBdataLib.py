@@ -2,6 +2,8 @@ from fastapi.encoders import jsonable_encoder
 from datetime import timedelta, datetime
 from sqlalchemy import text
 
+import json
+
 from DB.database import engineconn, rabbitmq
 from DB.models import *
 from DB.models import userInfo
@@ -34,17 +36,17 @@ async def getLastPostNumber():
     session.close()
     return postNumber[0]
 
-async def getLatestPostList(targetPostNumber, numberOfPost):
-    #Return including number targetPostNumber
+async def getLatestPostList_recent(targetPostNumber, numberOfPost):
     postList = []
-    targetPostNumber += 1
-    for i in range(numberOfPost):
-        if(targetPostNumber != 1):
-            value = int(list(session.execute(text(f"SELECT MAX(postNumber) FROM postInfo WHERE postNumber < {targetPostNumber}")))[0][0])
-            postList.append(value)
-            targetPostNumber = value
-        else:
-            break
+
+    value = list(session.execute(text(
+        f"SELECT JSON_OBJECT('postNumber',postNumber, 'postName', postName, 'postUserNumber', postUserNumber, 'postDate', postDate, 'postType', postType, 'postCategory', postCategory, 'locationX', locationX, 'locationY', locationY, 'views', views, 'numberOfChat', numberOfChat, 'content', content, 'disabled', disabled) FROM postInfo WHERE postNumber < {targetPostNumber} ORDER BY postNumber DESC"
+    )))
+    try:
+        for i in range(numberOfPost):
+            postList.append(json.loads(value[i][0]))
+    except IndexError:
+        pass
     session.close()
     return postList
 
