@@ -12,7 +12,9 @@ async def disablePost(postData: disablepostRequest):
     tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"postNumber":postData.targetPostNumber, "disabled":True}
     value = await updatePostInfo(param)
-    if(value != 0):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value != 0):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -26,7 +28,9 @@ async def enablePost(postData: enablepostRequest):
     tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"postNumber":postData.targetPostNumber, "disabled":False}
     value = await updatePostInfo(param)
-    if(value != 0):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value != 0):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -40,7 +44,9 @@ async def deletePicture(deleteData: deletepostpicture_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
     value = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
-    if(value):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -64,7 +70,9 @@ async def updatePosting(updateData: updateposting_adminRequest):
     del updateData["refresh_token"]
 
     value = await updatePostInfo(updateData)
-    if(value != 0):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value != 0):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -77,9 +85,13 @@ async def updatePosting(updateData: updateposting_adminRequest):
 async def deletePosting(deleteData: deleteposting_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
     value = await deletePostInfo(deleteData.postNumber)
-    
-    if(value == 1):
-        if(not await deletePostPictureAll(deleteData.postNumber)):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value == 1):
+        isDeleted = await deletePostPictureAll(deleteData.postNumber)
+        if(isDeleted == -2):
+            await raiseDBDownError()
+        elif(not isDeleted):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete picture from DB. (posting deleted)"

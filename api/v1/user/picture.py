@@ -10,7 +10,9 @@ router = APIRouter(prefix="/api/v1/user")
 @router.get("/picture")
 async def getUserPicture(userNumber: int):
     file = await getUserPictureDB(userNumber)
-    if(file):
+    if(file == -2):
+        await raiseDBDownError()
+    elif(file):
         result = file.data
     else:
         result = await getDefaultProfilePicture()
@@ -32,7 +34,10 @@ async def createUserPicture(
         )
     tokenDict = await userNumberVerify(access_token, refresh_token, userNumber)
     if(tokenDict):
-        if(await createUserPictureDB(await file.read(), userNumber)):
+        isCreatedPicture = await createUserPictureDB(await file.read(), userNumber)
+        if(isCreatedPicture == -2):
+            await raiseDBDownError()
+        elif(isCreatedPicture):
             return JSONResponse({"data":{"result":"success"},"token":tokenDict})
         else:
             raise HTTPException(
@@ -66,9 +71,14 @@ async def updateUserPicture(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No upload file sent."
         )
-
-    if(await deleteUserProfilePicture(userNumber)):
-        if(await createUserPictureDB(await file.read(), userNumber)):
+    isDeleted = await deleteUserProfilePicture(userNumber)
+    if(isDeleted == -2):
+        await raiseDBDownError()
+    elif(isDeleted):
+        isCreatedPicture = await createUserPictureDB(await file.read(), userNumber)
+        if(isCreatedPicture == -2):
+            await raiseDBDownError()
+        if(isCreatedPicture):
             return JSONResponse({"data":{"result":"success"},"token":tokenDict})
         else:
             raise HTTPException(
@@ -91,8 +101,10 @@ async def deleteUserPicture(deleteData: deleteuserpictureRequest):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Do not have permission"
         )
-
-    if(await deleteUserProfilePicture(deleteData.userNumber)):
+    isDeleted = await deleteUserProfilePicture(deleteData.userNumber)
+    if(isDeleted == -2):
+        await raiseDBDownError()
+    elif(isDeleted):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(

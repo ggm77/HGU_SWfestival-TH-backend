@@ -125,12 +125,15 @@ async def passwordVerify(plain, hashed):
 async def authenticate_user(email, password):
 
     userNumber = await emailToUserNumber(email)
-
     if(userNumber == 0):
         return -1
+    elif(userNumber == -2):
+        await raiseDBDownError()
     
     user = await getUserInfo(userNumber)
-    if(user == -1):
+    if(user == -2):
+        await raiseDBDownError()
+    elif(user == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found."
@@ -142,7 +145,7 @@ async def authenticate_user(email, password):
         )
 
     if(await passwordVerify(password, user["hashed_password"])):
-        return 1
+        return userNumber
     else:
         return 0
     
@@ -163,6 +166,8 @@ async def registUser(userInfo: dict):
 
     user = await createUserInfo(userInfo)
 
+    if(user == -2):
+        await raiseDBDownError()
     if(user):
         return user
     else:
@@ -174,15 +179,12 @@ async def uploadPost(postInfo: dict):
     postInfo["views"] = 0
     postInfo["numberOfChat"] = 0
 
-
-    del postInfo["access_token"]
-    del postInfo["token_type"]
-    del postInfo["refresh_token"]
-
     
     post = await createPostInfo(postInfo)
 
-    if(post):
+    if(post == -2):
+        await raiseDBDownError()
+    elif(post):
         if(payload.get("type")=="refresh"):
             return {"data":post,"token":await create_token(payload.get("sub"))}
         else:
@@ -193,7 +195,9 @@ async def uploadPost(postInfo: dict):
 async def uploadReview(data: dict):
 
     post = await getPostInfo(data["postNumber"])
-    if(post == -1):
+    if(post == -2):
+        await raiseDBDownError()
+    elif(post == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Post not found."
@@ -217,18 +221,24 @@ async def uploadReview(data: dict):
             detail="You cannot write review on your own post."
         )
 
-    del data["access_token"]
-    del data["token_type"]
-    del data["refresh_token"]
-    if(await getReviewDB_author(data["authorUserNumber"], data["postNumber"]) == None):
+
+    author = await getReviewDB_author(data["authorUserNumber"], data["postNumber"])
+    if(author == -2):
+        await raiseDBDownError()
+    elif(author == None):
         review = await createReviewDB(data)
+        if(review == -2):
+            await raiseDBDownError()
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="review already in DB."
         )
     if(review):
-        if(await ratePlus(data["targetUserNumber"], data["rate"])):
+        isAdded = await ratePlus(data["targetUserNumber"], data["rate"])
+        if(isAdded == -2):
+            await raiseDBDownError()
+        elif(isAdded):
             if(payload.get("type")=="refresh"):
                 return {"data":review,"token":await create_token(payload.get("sub"))}
             else:
@@ -247,7 +257,9 @@ async def createChatRoom(data: dict):
     
     value = await createChatRoomDB(data)
 
-    if(value):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value):
         return value
     else:
         return False
@@ -258,7 +270,9 @@ async def adminVerify(token: str, refreshToken: str):
     payload = await decodeToken(token, refreshToken)
     userNumber = payload.get("sub")
     info = await getUserInfo(userNumber)
-    if(info == -1):
+    if(info == -2):
+        await raiseDBDownError()
+    elif(info == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found."
@@ -280,6 +294,19 @@ async def adminVerify(token: str, refreshToken: str):
         )
     
 async def postUserVerify(token, refreshToken, postNumber):
+    info = await getPostInfo(postNumber)
+    if(info == -2):
+        await raiseDBDownError()
+    elif(info == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Post not found."
+        )
+    elif(info == 0):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Post disabled."
+        )
     postUserNumber = (await getPostInfo(postNumber))["postUserNumber"]
     payload = await decodeToken(token, refreshToken)
     tokenUserNumber = payload.get("sub")
@@ -301,7 +328,13 @@ async def userNumberVerify(token, refreshToken, userNumber):
             return {"access_token":token,"refresh_token":refreshToken}
     else:
         return False
-    
+
+
+async def raiseDBDownError():
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="DATABASE DOWN"
+    )
 
 def getHashedPassword(password):
     return pwd_context.hash(password)

@@ -14,12 +14,18 @@ async def getPostingListRecent(targetPostNumber: Union[int, None] = None, number
     
     if(targetPostNumber == None):
         currentLastNumber = await getLastPostNumber()
-        postList = await getLatestPostList_recent(currentLastNumber+1, numberOfPost)
+        if(not currentLastNumber):
+            await raiseDBDownError()
+        postList = await getLatestPostList(currentLastNumber+1, numberOfPost)
     else:
-        postList = await getLatestPostList_recent(targetPostNumber, numberOfPost)
+        postList = await getLatestPostList(targetPostNumber, numberOfPost)
 
-    if(postList):
+    if(postList == False):
+        await raiseDBDownError()
+    elif(postList[0]):
         return JSONResponse({"postList":postList})
+    elif(postList == []):
+        return JSONResponse({"postList":None})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -33,6 +39,23 @@ async def getPostListRecommended(targetPostNumber: Union[int, None] = None, numb
 
 
 @router.get("/list/distance")
-async def getPostListDistance(targetPostNumber: Union[int, None] = None, numberOfPost: Union[int, None] = 10):
-    return
+async def getPostListDistance(locationX: float, locationY: float, distance: Union[int, None] = 0, numberOfPost: Union[int, None] = 10):
+
+    # 위도에서 0.008도가 1km
+    #https://byul91oh.tistory.com/385
+
+    postList = await getNearestPostList(locationX, locationY, distance, numberOfPost)
+    if(postList == False):
+        await raiseDBDownError()
+    elif(postList[0]):
+        return JSONResponse({"postList":postList})
+    elif(postList == []):
+        return JSONResponse({"postList",None})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get posting list."
+        )
+
+
 

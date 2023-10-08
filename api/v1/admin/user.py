@@ -13,6 +13,8 @@ async def disableUser(postData: disableuserRequest):
     tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"userNumber":postData.targetUserNumber, "disabled":True}
     value = await updateUserInfo(param)
+    if(value == -2):
+        await raiseDBDownError()
     if(value != 0):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
@@ -28,7 +30,9 @@ async def enableUser(postData: enableuserRequest):
     tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
     param = {"userNumber":postData.targetUserNumber, "disabled":False}
     value = await updateUserInfo(param)
-    if(value != 0):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value != 0):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -39,7 +43,10 @@ async def enableUser(postData: enableuserRequest):
 @router.delete("/user/picture")
 async def deleteUserPicture(deleteData: deleteuserpicture_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
-    if(await deleteUserProfilePicture(deleteData.userNumber)):
+    isDeleted = await deleteUserProfilePicture(deleteData.userNumber)
+    if(isDeleted == -2):
+        await raiseDBDownError()
+    elif(isDeleted):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -51,7 +58,9 @@ async def deleteUserPicture(deleteData: deleteuserpicture_adminRequest):
 async def getUserinfo(userNumber: int, access_token: str, token_type: str, refresh_token: str):
     tokenDict = await adminVerify(access_token, refresh_token)
     user = await getUserInfo(userNumber)
-    if(user == -1):
+    if(user == -2):
+        await raiseDBDownError()
+    elif(user == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found."
@@ -88,7 +97,9 @@ async def changeUserInfo(postData: changuserinfoRequest):
     del updateData["admin_refresh_token"]
     
     value = await updateUserInfo(updateData)
-    if(value != 0):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value != 0):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -101,8 +112,16 @@ async def changeUserInfo(postData: changuserinfoRequest):
 async def deleteUser(deleteData: deleteuser_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
     value = await deleteUserInfo(deleteData.targetUserNumber)
-    if(await getUserPictureDB(deleteData.targetUserNumber)):
-        if(not await deleteUserProfilePicture(deleteData.targetUserNumber)):
+    if(value == -2):
+        await raiseDBDownError()
+    userPicture = await getUserPictureDB(deleteData.targetUserNumber)
+    if(userPicture == -2):
+        await raiseDBDownError()
+    elif(userPicture):
+        isDeleted = await deleteUserProfilePicture(deleteData.targetUserNumber)
+        if(isDeleted == -2):
+            await raiseDBDownError()
+        elif(not isDeleted):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete picture from DB."

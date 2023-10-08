@@ -31,13 +31,18 @@ async def getPosting(postNumber: int, access_token: Union[str, None] = None, tok
         except:
             print("Access token error.")
             pass
-        if(await viewsPlusOne(postNumber) == 0):
+        isAdded = await viewsPlusOne(postNumber)
+        if(isAdded == -2):
+            await raiseDBDownError()
+        elif(isAdded == 0):
                 print("Views did not increase.")
                 pass
         
 
     value = await getPostInfo(postNumber)
-    if(value == -1):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Post not found."
@@ -61,8 +66,9 @@ async def updatePosting(updateData: updatepostingRequest):
     payload = await decodeToken(updateData.access_token, updateData.refresh_token)
     userNumber = payload.get("sub")
     post = await getPostInfo(updateData.postNumber)
-
-    if(post == -1):
+    if(post == -2):
+        await raiseDBDownError()
+    elif(post == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Post not found."
@@ -82,11 +88,17 @@ async def updatePosting(updateData: updatepostingRequest):
         del data["refresh_token"]
 
         value = await updatePostInfo(data)
+        if(value == -2):
+            await raiseDBDownError()
+        post = await getPostInfo(value)
+        if(post == -2):
+            await raiseDBDownError()
+
         if(value != 0):
             if(payload.get("type")=="refresh"):
-                return JSONResponse({"data":await getPostInfo(value),"token":await create_token(payload.get("sub"))})
+                return JSONResponse({"data":post,"token":await create_token(payload.get("sub"))})
             else:
-                return JSONResponse({"data":await getPostInfo(value),"token":{"access_token":updateData.access_token,"refresh_token":updateData.refresh_token}})
+                return JSONResponse({"data":post,"token":{"access_token":updateData.access_token,"refresh_token":updateData.refresh_token}})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -107,7 +119,9 @@ async def deletePosting(deleteData: deletepostingRequest):
     userNumber = payload.get("sub")
     post = await getPostInfo(deleteData.postNumber)
 
-    if(post == -1):
+    if(post==-2):
+        await raiseDBDownError()
+    elif(post == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Post not found."
@@ -121,8 +135,13 @@ async def deletePosting(deleteData: deletepostingRequest):
 
     if(str(post["postUserNumber"]) == userNumber):
         value = await deletePostInfo(deleteData.postNumber)
+        if(value == -2):
+            await raiseDBDownError()
         if(value == 1):
-            if(not await deletePostPictureAll(deleteData.postNumber)):
+            isDeleted = await deletePostPictureAll(deleteData.postNumber)
+            if(isDeleted == -2):
+                await raiseDBDownError()
+            elif(not isDeleted):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to delete picture from DB. (posting deleted)"

@@ -25,7 +25,9 @@ async def createReview(postData: createreviewRequest):
 @router.get("/review/{reviewNumber}")
 async def getReview(reviewNumber: int):
     review = await getReviewDB_reviewNumber(reviewNumber)
-    if(review == -1):
+    if(review == -2):
+        await raiseDBDownError()
+    elif(review == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Review not found."

@@ -12,7 +12,10 @@ router = APIRouter(prefix="/api/v1/admin")
 async def delete_chat_room(deleteData: deletechatroom_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
-    if(await deleteChatRoomInfoDB(deleteData.chatRoomNumber)):
+    isDeleted = await deleteChatRoomInfoDB(deleteData.chatRoomNumber)
+    if(isDeleted == -2):
+        await raiseDBDownError()
+    elif(isDeleted):
         return JSONResponse({"data":{"result":"success"}, "token":tokenDict})
     else:
         raise HTTPException(

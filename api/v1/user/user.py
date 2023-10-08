@@ -34,7 +34,9 @@ async def getUserinfo(access_token: str, token_type: str, refresh_token: str):
     payload = await decodeToken(access_token, refresh_token)
     userNumber = payload.get("sub")
     user = await getUserInfo(userNumber)
-    if(user == -1):
+    if(user == -2):
+        await raiseDBDownError()
+    elif(user == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found."
@@ -58,7 +60,9 @@ async def updateUserinfo(putData: updateuserRequest):
     payload = await decodeToken(putData.access_token, putData.refresh_token)
     userNumber = payload.get("sub")
     info = await getUserInfo(userNumber)
-    if(info == -1):
+    if(info == -2):
+        await raiseDBDownError()
+    elif(info == -1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User not found."
@@ -94,11 +98,16 @@ async def updateUserinfo(putData: updateuserRequest):
     del putData["token_type"]
     del putData["refresh_token"]
     value = await updateUserInfo(putData)
+    if(value == -2):
+        await raiseDBDownError()
+    user = await getUserInfo(value)
+    if(user == -2):
+        await raiseDBDownError()
     if(value != 0):
         if(payload.get("type")=="refresh"):
-            return JSONResponse({"data":await getUserInfo(value),"token":await create_token(payload.get("sub"))})
+            return JSONResponse({"data":user,"token":await create_token(payload.get("sub"))})
         else:
-            return JSONResponse({"data":await getUserInfo(value),"token":{"access_token":putData.access_token,"refresh_token":putData.refresh_token}})
+            return JSONResponse({"data":user,"token":{"access_token":putData.access_token,"refresh_token":putData.refresh_token}})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -114,9 +123,16 @@ async def deleteUser(deleteData: deleteuserRequest):
         payload = await decodeToken(deleteData.access_token, deleteData.refresh_token)
         if(str(userNumber) == payload.get("sub")):
             value = await deleteUserInfo(userNumber)
-
-            if(await getUserPictureDB(userNumber)):
-                if(not await deleteUserProfilePicture(userNumber)):
+            if(value == -2):
+                await raiseDBDownError()
+            userPicture = await getUserPictureDB(userNumber)
+            if(userPicture == -2):
+                await raiseDBDownError()
+            elif(userPicture):
+                isDeleted = await deleteUserProfilePicture(userNumber)
+                if(isDeleted == -2):
+                    await raiseDBDownError()
+                elif(not isDeleted):
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Failed to delete picture from DB."

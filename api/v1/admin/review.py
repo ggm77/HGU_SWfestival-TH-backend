@@ -12,8 +12,10 @@ router = APIRouter(prefix="/api/v1/admin")
 @router.post("/disableReview")
 async def disableReview(postData: disablereviewRequest):
     tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
-
-    if(await updateReviewDB({"reviewNumber":postData.reviewNumber, "disabled":True})):
+    isUpdated = await updateReviewDB({"reviewNumber":postData.reviewNumber, "disabled":True})
+    if(isUpdated == -2):
+        await raiseDBDownError()
+    elif(isUpdated):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -26,7 +28,10 @@ async def disableReview(postData: disablereviewRequest):
 async def enableReview(postData: enablereviewRequest):
     tokenDict = await adminVerify(postData.access_token, postData.refresh_token)
 
-    if(await updateReviewDB({"reviewNumber":postData.reviewNumber, "disabled":False})):
+    isUpdated = await updateReviewDB({"reviewNumber":postData.reviewNumber, "disabled":False})
+    if(isUpdated == -2):
+        await raiseDBDownError()
+    elif(isUpdated):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -47,7 +52,10 @@ async def updateReview(updateData: updatereviewRequest):
     del updateData["token_type"]
     del updateData["refresh_token"]
 
-    if(await updateReviewDB(updateData)):
+    isUpdated = await updateReviewDB(updateData)
+    if(isUpdated == -2):
+        await raiseDBDownError()
+    elif(isUpdated):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(
@@ -61,7 +69,10 @@ async def updateReview(updateData: updatereviewRequest):
 async def deleteReview(deleteData: deletereviewRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
-    if(await deleteReviewDB(deleteData.reviewNumber)):
+    isDeleted = await deleteReviewDB(deleteData.reviewNumber)
+    if(isDeleted == -2):
+        await raiseDBDownError()
+    if(isDeleted):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(

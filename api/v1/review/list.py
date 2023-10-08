@@ -10,7 +10,9 @@ router = APIRouter(prefix="/api/v1/review")
 @router.get("/list/{userNumber}")
 async def getReviewList(userNumber: int):
     review = await getReviewListDB(userNumber)
-    if(review):
+    if(review == -2):
+        await raiseDBDownError()
+    elif(review):
         return JSONResponse({"reviewList":review})
     else:
         raise HTTPException(

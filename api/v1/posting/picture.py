@@ -10,7 +10,8 @@ router = APIRouter(prefix="/api/v1/posting")
 @router.get("/picture/list")
 async def getPictureList(postNumber: int):
     pictureList = await getPostPictureList(postNumber)
-    print(pictureList)
+    if(pictureList == -2):
+        await raiseDBDownError()
     if(pictureList):
         return JSONResponse({"fileList":pictureList})
     else:
@@ -24,7 +25,9 @@ async def getPictureList(postNumber: int):
 @router.get("/picture")
 async def getPostPicture(postNumber: int, pictureName: int):
     file = await getPostPictureDB(postNumber, pictureName)
-    if(file):
+    if(file == -2):
+        await raiseDBDownError()
+    elif(file):
         return Response(content=file.data, media_type="image/jpeg")
     else:
         raise HTTPException(
@@ -68,7 +71,9 @@ async def createPicture(
         )
     else:
         value = await createPostPicture(await file.read(), postNumber, pictureNumber)
-        if(value):
+        if(value == -2):
+            await raiseDBDownError()
+        elif(value):
             return JSONResponse({"data":{"filename": file.filename},"token":tokenDict})
         else:
             raise HTTPException(
@@ -110,9 +115,13 @@ async def updatePicture(
         )
     else:
         deletevalue = await deletePostPicture(postNumber, pictureNumber)
-        if(deletevalue):
+        if(deletevalue == -2):
+            await raiseDBDownError()
+        elif(deletevalue):
             value = await createPostPicture(await file.read(), postNumber, pictureNumber)
-            if(value):
+            if(value == -2):
+                await raiseDBDownError()
+            elif(value):
                 return JSONResponse({"data":{"filename": file.filename},"token":tokenDict})
             else:
                 raise HTTPException(
@@ -136,7 +145,10 @@ async def deletePicture(deleteData: deletepictureRequest):
             detail="Do not have permission"
         )
 
-    if(await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)):
+    isDeleted = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
+    if(isDeleted == -2):
+        await raiseDBDownError()
+    elif(isDeleted):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
         raise HTTPException(

@@ -13,8 +13,11 @@ async def create_chat_room(postData: createchatroomRequest):
 
     payload = await decodeToken(postData.access_token, postData.refresh_token)
     userNumber = payload.get("sub")
-    
-    if((await getPostInfo(postData.postNumber))["postUserNumber"] != postData.postUserNumber):
+    info = await getPostInfo(postData.postNumber)
+    if(info == -2):
+        await raiseDBDownError()
+
+    if(info["postUserNumber"] != postData.postUserNumber):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="PostUserNumber not matched"
@@ -54,8 +57,9 @@ async def get_chat_room(
     userNumber = payload.get("sub")
 
     chatRoomInfo = await getChatRoomInfoDB(chatRoomNumber)
-
-    if(not chatRoomInfo):
+    if(chatRoomInfo == -2):
+        await raiseDBDownError()
+    elif(not chatRoomInfo):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get chatRoomInfo from DB."

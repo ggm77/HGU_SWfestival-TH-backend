@@ -11,6 +11,8 @@ async def verificationPassword(postData: verificationRequest):
     payload = await decodeToken(postData.access_token, postData.refresh_token)
     userNumber = payload.get("sub")
     info = await getUserInfo(userNumber)
+    if(info == -2):
+        await raiseDBDownError()
     if(await passwordVerify(postData.password, info["hashed_password"])):
         if(payload.get("type")=="refresh"):
             return JSONResponse({"data":{"result":"success"},"token":await create_token(payload.get("sub"))})
