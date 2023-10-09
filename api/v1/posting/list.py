@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/posting")
 async def getPostingListRecent(targetPostNumber: Union[int, None] = None, numberOfPost: Union[int, None] = 10):
     
     if(targetPostNumber == None):
-        currentLastNumber = await getLastPostNumber()
+        currentLastNumber = int(await getLastPostNumber())
         if(not currentLastNumber):
             await raiseDBDownError()
         postList = await getLatestPostList(currentLastNumber+1, numberOfPost)
@@ -34,8 +34,20 @@ async def getPostingListRecent(targetPostNumber: Union[int, None] = None, number
 
 
 @router.get("/list/recommended")
-async def getPostListRecommended(targetPostNumber: Union[int, None] = None, numberOfPost: Union[int, None] = 10):
-    return
+async def getPostListRecommended(locationX: float, locationY: float, distance: Union[int, None] = 0, numberOfPost: Union[int, None] = 10):
+    postList = await getNearestPostList(locationX, locationY, distance, numberOfPost)
+    if(postList == False):
+        await raiseDBDownError()
+    elif(postList == []):
+        return JSONResponse({"postList":None})
+    elif(postList[0]):
+        postList.sort(key=lambda x: x["postNumber"])
+        return JSONResponse({"postList":postList})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get posting list."
+        )
 
 
 @router.get("/list/distance")
@@ -47,10 +59,10 @@ async def getPostListDistance(locationX: float, locationY: float, distance: Unio
     postList = await getNearestPostList(locationX, locationY, distance, numberOfPost)
     if(postList == False):
         await raiseDBDownError()
+    elif(postList == []):
+        return JSONResponse({"postList":None})
     elif(postList[0]):
         return JSONResponse({"postList":postList})
-    elif(postList == []):
-        return JSONResponse({"postList",None})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

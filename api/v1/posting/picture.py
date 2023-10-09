@@ -12,7 +12,7 @@ async def getPictureList(postNumber: int):
     pictureList = await getPostPictureList(postNumber)
     if(pictureList == -2):
         await raiseDBDownError()
-    if(pictureList):
+    elif(pictureList):
         return JSONResponse({"fileList":pictureList})
     else:
         raise HTTPException(

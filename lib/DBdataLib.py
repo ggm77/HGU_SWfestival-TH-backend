@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 import json
+from typing import Union
 
 from DB.database import engineconn, rabbitmq
 from DB.models import *
@@ -42,7 +43,7 @@ async def getLastPostNumber():
     session.close()
     return postNumber[0]
 
-async def getLatestPostList(targetPostNumber, numberOfPost):
+async def getLatestPostList(targetPostNumber: int, numberOfPost: int):
     postList = []
     try:
         value = list(session.execute(text(
@@ -72,7 +73,7 @@ async def getLatestPostList(targetPostNumber, numberOfPost):
     session.close()
     return postList
 
-async def getNearestPostList(locationX, locationY, distance, numberOfPost):
+async def getNearestPostList(locationX: Union[float, int], locationY: Union[float, int], distance: Union[float, int], numberOfPost: int):
     postList = []
     try:
         #distance 1 == 1km
@@ -94,7 +95,7 @@ async def getNearestPostList(locationX, locationY, distance, numberOfPost):
             (6371*acos(cos(radians({locationY}))*cos(radians(locationY))*cos(radians(locationX)-radians({locationX}))\
             +sin(radians({locationY}))*sin(radians(locationY))))AS distance\
             FROM postInfo\
-            HAVING distance < 5\
+            HAVING distance >= {distance} AND distance <= {distance+5}\
             ORDER BY distance\
             "
         )))
@@ -138,7 +139,7 @@ async def getPostInfo(postNumber):
         return 0
     return post
 
-async def getPostPictureList(postNumber):
+async def getPostPictureList(postNumber: int):
     try:
         pictureList = (list(session.execute(text(f"SELECT pictureNumber FROM postPicture WHERE postNumber = {postNumber};"))))
     except OperationalError:
@@ -214,7 +215,7 @@ async def getReviewDB_author(authorUserNumber, postNumber):
     return review
 
 
-async def getReviewListDB(userNumber):
+async def getReviewListDB(userNumber: int):
     reviewList = []
     try:
         reviewList = list(session.execute(text(f"SELECT reviewNumber FROM reviewInfo WHERE targetUserNumber = {userNumber}")))
@@ -547,7 +548,7 @@ async def deletePostPicture(postNumber, pictureNumber):
         session.close()
         return False
     
-async def deletePostPictureAll(postNumber):
+async def deletePostPictureAll(postNumber: int):
     try:
         session.execute(text(f"DELETE FROM postPicture WHERE postNumber = {str(postNumber)};"))
         session.commit()
