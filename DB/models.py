@@ -62,7 +62,7 @@ class reviewInfo(Base):
     reviewDate = Column(DATETIME, nullable=False)
     rate = Column(INTEGER, nullable=False)
     content = Column(VARCHAR, nullable=False)
-    postNumber = Column(INTEGER, nullable=False)
+    chatRoomNumber = Column(INTEGER, nullable=False)
     disabled = Column(Boolean, nullable=False)
 
 

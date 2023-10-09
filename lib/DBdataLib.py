@@ -201,9 +201,9 @@ async def getReviewDB_reviewNumber(reviewNumber):
         return review
 
 
-async def getReviewDB_author(authorUserNumber, postNumber):
+async def getReviewDB_author(authorUserNumber, chatRoomNumber):
     try:
-        review = session.query(reviewInfo).filter(reviewInfo.authorUserNumber == authorUserNumber, reviewInfo.postNumber == postNumber).first()
+        review = session.query(reviewInfo).filter(reviewInfo.authorUserNumber == authorUserNumber, reviewInfo.chatRoomNumber == chatRoomNumber).first()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
         return -2
@@ -392,7 +392,7 @@ async def createReviewDB(reviewData: dict):
         reviewDate = datetime.now(),
         rate = reviewData["rate"],
         content = reviewData["content"],
-        postNumber = reviewData["postNumber"],
+        chatRoomNumber = reviewData["chatRoomNumber"],
         disabled = False
     )
     try:
@@ -428,6 +428,7 @@ async def createChatRoomDB(chatRoomData: dict):
     try:
         session.add(data)
         session.commit()
+        return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
         return -2
@@ -637,7 +638,7 @@ async def viewsPlusOne(postNumber: int):
     
 async def ratePlus(userNumber: int, rate: int):
     try:
-        session.execute(text(f"update userInfo set rateSum  = userInfo.rateSum + {rate}, set countOfRate = userInfo.countOfRate + 1 where userNumber = {userNumber}"))
+        session.execute(text(f"update userInfo set rateSum  = userInfo.rateSum + {rate}, countOfRate = userInfo.countOfRate + 1 where userNumber = {userNumber}"))
         #session.execute(text(f"update userInfo set countOfRate = userInfo.countOfRate + 1 where userNumber = {userNumber}"))
         session.commit()
         session.close()

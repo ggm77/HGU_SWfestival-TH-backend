@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.websockets import WebSocketDisconnect
 
 from lib.lib import *
-from lib.schema import *
+from lib.dto import *
 
 from datetime import timedelta, datetime
 import asyncio
@@ -15,6 +15,9 @@ router = APIRouter(prefix="/api/v1")
 
 
 """
+
+NOT USE!!!!
+
 
 Receive token from chat page and start websocket connection
 chat 페이지에서 토큰 받은 다음 웹소켓 연결 시작

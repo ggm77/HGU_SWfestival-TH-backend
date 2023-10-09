@@ -4,8 +4,8 @@ from fastapi.encoders import jsonable_encoder
 
 from lib.lib import *
 from lib.lib import authenticate_user
-from lib.schema import *
-from lib.schema import tokenRequest
+from lib.dto import *
+from lib.dto import tokenRequest
 
 router = APIRouter(prefix="/api/v1")
 

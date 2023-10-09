@@ -34,7 +34,7 @@ class createreviewRequest(BaseModel):
     targetUserNumber: int
     rate: int
     content: str
-    postNumber: int
+    chatRoomNumber: int
     access_token: str
     token_type: str
     refresh_token: str

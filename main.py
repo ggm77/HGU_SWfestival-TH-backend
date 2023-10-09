@@ -18,6 +18,7 @@ from api.v1.review import review, list as review_list
 from api.v1.verification import verification
 from api.v1.ws import ws
 from api.v1.chat import chat
+from api.v1.socket_IO.sockets import sio_app
 
 app = FastAPI()
 
@@ -40,6 +41,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+app.mount("/api/v1/socket_IO", app=sio_app)
 app.include_router(user.router)
 app.include_router(user_picture.router)
 app.include_router(token.router)

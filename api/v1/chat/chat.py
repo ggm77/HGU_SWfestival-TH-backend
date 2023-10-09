@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from lib.lib import *
-from lib.schema import *
+from lib.dto import *
 
 router = APIRouter(prefix="/api/v1")
 
@@ -28,7 +28,9 @@ async def create_chat_room(postData: createchatroomRequest):
     
     value = await createChatRoom(jsonable_encoder(postData))
 
-    if(not value):
+    if(value):
+        value = "success"
+    else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to creatChatRoom."
@@ -70,12 +72,13 @@ async def get_chat_room(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="UserNumber not correct."
         )
-    
-    chat_access_token = await create_access_token(str(chatRoomNumber)+"-"+str(userNumber))
-    chat_refresh_token = await create_refresh_token(str(chatRoomNumber)+"-"+str(userNumber))
+    # 2:1->2
+    #'채팅방 번호' : '채팅 건 사람' -> '원본 포스팅 쓴 사람'     'chatRoomNumber' : 'chatterNumber' -> 'postUserNumber'
+    chat_access_token = await create_access_token(str(chatRoomNumber)+":"+str(chatRoomInfo["chatterNumber"])+"->"+str(chatRoomInfo["postUserNumber"]))
+    chat_refresh_token = await create_refresh_token(str(chatRoomNumber)+":"+str(chatRoomInfo["chatterNumber"])+"->"+str(chatRoomInfo["postUserNumber"]))
 
-    await chatSetup(str(chatRoomNumber)+"."+str(userNumber))
-    await chatRecodeSetup()
+    # await chatSetup(str(chatRoomNumber)+"."+str(userNumber))
+    # await chatRecodeSetup()
 
     if(payload.get("type")=="refresh"):
         return JSONResponse(

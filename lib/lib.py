@@ -194,18 +194,14 @@ async def uploadPost(postInfo: dict):
     
 async def uploadReview(data: dict):
 
-    post = await getPostInfo(data["postNumber"])
+    #post = await getPostInfo(data["postNumber"])
+    post = await getChatRoomInfoDB(data["chatRoomNumber"])
     if(post == -2):
         await raiseDBDownError()
-    elif(post == -1):
+    elif(post == False):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Post not found."
-        )
-    elif(post == 0):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Post disabled."
+            detail="Chat room not found."
         )
     
     if(post["postUserNumber"] != data["targetUserNumber"]):
@@ -220,9 +216,14 @@ async def uploadReview(data: dict):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot write review on your own post."
         )
+    elif(str(post["chatterNumber"]) != data["authorUserNumber"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You cannot write review."
+        )
 
 
-    author = await getReviewDB_author(data["authorUserNumber"], data["postNumber"])
+    author = await getReviewDB_author(data["authorUserNumber"], data["chatRoomNumber"])
     if(author == -2):
         await raiseDBDownError()
     elif(author == None):

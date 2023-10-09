@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from lib.lib import *
-from lib.schema import *
+from lib.dto import *
 
 router = APIRouter(prefix="/api/v1")
 
@@ -12,8 +12,9 @@ async def createReview(postData: createreviewRequest):
     postData = jsonable_encoder(postData)
     
     value = await uploadReview(postData)
-
-    if(value):
+    if(value == -2):
+        await raiseDBDownError()
+    elif(value):
         return JSONResponse(value)
     else:
         raise HTTPException(
@@ -39,3 +40,8 @@ async def getReview(reviewNumber: int):
         )
     else:
         return JSONResponse(review)
+
+
+@router.get("/review/user/{userNumber}")
+async def getReviewUserList(userNumber: int):
+    review = await getReviewDB_author()

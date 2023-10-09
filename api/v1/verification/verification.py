@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 
 from lib.lib import *
-from lib.schema import *
+from lib.dto import *
 
 router = APIRouter(prefix="/api/v1")
 
