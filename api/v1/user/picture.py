@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, UploadFile, Response
 from fastapi.responses import JSONResponse, FileResponse
 
 from lib.lib import *
-from lib.dto import *
+from lib.dataClass import *
 
 router = APIRouter(prefix="/api/v1/user")
 

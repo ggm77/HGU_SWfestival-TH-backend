@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.websockets import WebSocketDisconnect
 
 from lib.lib import *
-from lib.dto import *
+from lib.dataClass import *
 
 from datetime import timedelta, datetime
 import asyncio

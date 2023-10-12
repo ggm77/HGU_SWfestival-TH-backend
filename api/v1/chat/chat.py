@@ -3,12 +3,12 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from lib.lib import *
-from lib.dto import *
+from lib.dataClass import *
 
 router = APIRouter(prefix="/api/v1")
 
 
-@router.post("/chat")
+@router.post("/chat")#마지막 채팅번호 리턴
 async def create_chat_room(postData: createchatroomRequest):
 
     payload = await decodeToken(postData.access_token, postData.refresh_token)
@@ -28,9 +28,7 @@ async def create_chat_room(postData: createchatroomRequest):
     
     value = await createChatRoom(jsonable_encoder(postData))
 
-    if(value):
-        value = "success"
-    else:
+    if(not value):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to creatChatRoom."

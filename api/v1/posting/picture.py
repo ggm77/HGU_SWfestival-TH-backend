@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, UploadFile, Response
 from fastapi.responses import JSONResponse
 
 from lib.lib import *
-from lib.dto import *
+from lib.dataClass import *
 
 router = APIRouter(prefix="/api/v1/posting")
 
@@ -22,18 +22,20 @@ async def getPictureList(postNumber: int):
 
 
 
-@router.get("/picture")
-async def getPostPicture(postNumber: int, pictureName: int):
-    file = await getPostPictureDB(postNumber, pictureName)
-    if(file == -2):
-        await raiseDBDownError()
-    elif(file):
-        return Response(content=file.data, media_type="image/jpeg")
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File dose not exist."
-        )
+# GET - https://hguswfestivalthbackenddb.blob.core.windows.net/post-picture/{postNumber - pictureNumber}.jpeg
+
+# @router.get("/picture")
+# async def getPostPicture(postNumber: int, pictureName: int):
+#     file = await getPostPictureDB(postNumber, pictureName)
+#     if(file == -2):
+#         await raiseDBDownError()
+#     elif(file):
+#         return Response(content=file.data, media_type="image/jpeg")
+#     else:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="File dose not exist."
+#         )
 
 
 @router.post("/picture")
@@ -45,6 +47,12 @@ async def createPicture(
     token_type: str,
     refresh_token: str
 ):
+    
+    if(file.content_type[:5] != "image"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only image file allowed."
+        )
     
     tokenDict = await postUserVerify(access_token, refresh_token, postNumber)
 
@@ -70,11 +78,26 @@ async def createPicture(
             detail="No pictureNumber sent."
         )
     else:
-        value = await createPostPicture(await file.read(), postNumber, pictureNumber)
-        if(value == -2):
-            await raiseDBDownError()
+        #value = await createPostPicture(await file.read(), postNumber, pictureNumber) #mariadb
+
+
+        if(file.content_type[6:] != "jpeg"):
+            data = await bytesToJpeg(await file.read())
+        else:
+            data = await file.read()
+
+
+        
+        value = await createPostPicture_azure(data, file.content_type, postNumber, pictureNumber) #azure blob storage
+        # if(value == -2):
+        #     await raiseDBDownError()
+        if(value == -1):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="pictureNumber already in there"
+            )
         elif(value):
-            return JSONResponse({"data":{"filename": file.filename},"token":tokenDict})
+            return JSONResponse({"data":{"result":"success"},"token":tokenDict})
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -145,7 +168,8 @@ async def deletePicture(deleteData: deletepictureRequest):
             detail="Do not have permission"
         )
 
-    isDeleted = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
+    #isDeleted = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
+    isDeleted = await deletePostPicture_azure(deleteData.postNumber, deleteData.pictureNumber)
     if(isDeleted == -2):
         await raiseDBDownError()
     elif(isDeleted):

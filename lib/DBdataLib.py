@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError
 import json
 from typing import Union
 
-from DB.database import engineconn, rabbitmq
+from DB.database import engineconn, rabbitmq, azureBlobStorage
 from DB.models import *
 from DB.models import userInfo
 
@@ -31,6 +31,18 @@ async def backupChat(body):
 async def getChat(routing_key, callback):
     result = await rabbitmqClient.get_chat(routing_key=routing_key, callback=callback)
     return result
+
+
+async def existPostPicture_azure(postNumber, pictureNumber):
+    isExist = await azureBlobStorage.exist(azureBlobStorage, "post-picture", postNumber, pictureNumber)
+
+    if(isExist == False):
+        return False
+    elif(isExist == -1):
+        return -1
+    elif(isExist == 1):
+        return 1
+
 
 
 async def getLastPostNumber():
@@ -330,6 +342,23 @@ async def createPostInfo(post: dict):
     return info
 
 
+async def createPostPicture_azure(file, contentType, postNumber, pictureNumber):
+    isExist = await existPostPicture_azure(postNumber, pictureNumber)
+
+    if(isExist == 1):
+        print("[AZURE Error] pictureNumber already in there.")
+        return -1
+    elif(isExist == False):
+        return False
+    isUploaded = await azureBlobStorage.upload(azureBlobStorage, container="post-picture", postNumber=postNumber, pictureNumber=pictureNumber, file=file, type=contentType)
+    if(isUploaded):
+        return True
+    else:
+        return False
+            
+
+
+
 async def createPostPicture(file, postNumber, pictureNumber):
     data = postPicture(
         postNumber = postNumber,
@@ -428,7 +457,6 @@ async def createChatRoomDB(chatRoomData: dict):
     try:
         session.add(data)
         session.commit()
-        return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
         return -2
@@ -534,6 +562,18 @@ async def deletePostInfo(postNumber: int):
         print("[DB Error]", e)
         session.close()
         return 0
+    
+
+async def deletePostPicture_azure(postNumber, pictureNumber):
+    try:
+        isDeleted = await azureBlobStorage.delete(azureBlobStorage, "post-picture", postNumber, pictureNumber)
+    except Exception as e:
+        print("[AZURE Error]",e)
+        return False
+    if(isDeleted):
+        return True
+    else:
+        return False
     
 async def deletePostPicture(postNumber, pictureNumber):
     try:

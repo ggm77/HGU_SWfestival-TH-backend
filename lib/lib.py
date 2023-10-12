@@ -7,6 +7,7 @@ import json
 import os
 from PIL import Image
 import io
+from io import BytesIO
 import time
 
 from lib.DBdataLib import *
@@ -336,6 +337,12 @@ async def raiseDBDownError():
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="DATABASE DOWN"
     )
+
+async def bytesToJpeg(data):
+    buffer = io.BytesIO()
+    image = Image.open(BytesIO(data)).convert("RGB")
+    image.save(buffer, format="jpeg")
+    return buffer.getvalue()
 
 def getHashedPassword(password):
     return pwd_context.hash(password)

@@ -55,12 +55,21 @@ async def connect(sid, environ, auth: dict):
     sio_server.enter_room(sid, chatRoomNumber)
 
     print(f'{sid}: connected')
-    await sio_server.emit('join', {'sid': sid})
+    await sio_server.emit('join', {'sid': sid}, to=chatRoomNumber)
 
 
 @sio_server.event
-async def chat(sid, message, room):
-    await sio_server.emit('chat', {'sid': sid, 'message': message}, to=room)
+async def chat(sid, data, room):
+
+    """
+    data = {
+        "messageType":"(file or text)",
+        "message":"(메세지 or null)",
+        "file":"(파일 or null)",
+        "timestamp":"2023.10.10T22:42:20"
+    }
+    """
+    await sio_server.emit('chat', {'sid': sid, 'message': data["message"]}, to=room)
 
 
 @sio_server.event

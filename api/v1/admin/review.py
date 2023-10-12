@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from lib.lib import *
-from lib.dto import *
-from lib.dto import deletereviewRequest
+from lib.dataClass import *
+from lib.dataClass import deletereviewRequest
 
 router = APIRouter(prefix="/api/v1/admin")
 

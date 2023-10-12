@@ -4,6 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import *
 from sqlalchemy import create_engine 
+from azure.storage.blob.aio import BlobServiceClient
 import pika
 import os
 import json
@@ -14,8 +15,8 @@ BASE_DIR = os.path.dirname(os.path.abspath("secrets.json"))
 SECRET_FILE = os.path.join(BASE_DIR, "secrets.json")
 secrets = json.loads(open(SECRET_FILE).read())
 DB = secrets["DB"]
-
 DB_URL = f"mysql+pymysql://{DB['user']}:{DB['password']}@{DB['host']}:{DB['port']}/{DB['database']}?charset=utf8"
+AZURE_CONNECTION_STRING = DB["azureConnectionString"]
 
 class engineconn:
 
@@ -31,6 +32,51 @@ class engineconn:
         conn = self.engine.connect()
         return conn
     
+
+class azureBlobStorage:
+    async def exist(self, container: str, postNumber: int, pictureNumber: int):
+        blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
+        container_name = container
+        name = str(postNumber)+"-"+str(pictureNumber)+".jpeg"
+        async with blob_service_client:
+            container_client = blob_service_client.get_container_client(container_name)
+            try:
+                blob_client = container_client.get_blob_client(name)
+            except Exception as e:
+                print("[AZURE Error]",e)
+                return False
+            if(await blob_client.exists()):
+                return 1
+            else:
+                return -1
+
+    async def upload(self, container: str, file: bytes , postNumber: int, pictureNumber: int, type: str):
+        blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
+        container_name = container
+        name = str(postNumber)+"-"+str(pictureNumber)+".jpeg"
+        async with blob_service_client:
+            container_client = blob_service_client.get_container_client(container_name)
+            try:
+                blob_client = container_client.get_blob_client(name)
+                await blob_client.upload_blob(file)
+            except Exception as e:
+                print("[AZURE Error]",e)
+                return False
+            
+        return True
+    
+    async def delete(self, container: str, postNumber: int, pictureNumber: int):
+        blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
+        container_name = container
+        async with blob_service_client:
+            container_client = blob_service_client.get_container_client(container_name)
+            try:
+                blob_client = container_client.get_blob_client(str(postNumber)+"-"+str(pictureNumber)+".jpeg")
+                await blob_client.delete_blob()
+            except Exception as e:
+                print("[AZURE Error]",e)
+                return False
+            return True
 
 class rabbitmq:
     def __init__(self):
