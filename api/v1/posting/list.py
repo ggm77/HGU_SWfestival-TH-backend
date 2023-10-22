@@ -23,7 +23,7 @@ async def getPostingListRecent(targetPostNumber: Union[int, None] = None, number
     if(postList == False):
         await raiseDBDownError()
     elif(postList[0]):
-        return JSONResponse({"postList":postList})
+        return JSONResponse({"lastPostNumber":postList[-1]["postNumber"],"postList":postList})
     elif(postList == []):
         return JSONResponse({"postList":None})
     else:
@@ -32,7 +32,7 @@ async def getPostingListRecent(targetPostNumber: Union[int, None] = None, number
             detail="Failed to get posting list."
         )
 
-
+# 현재 위치+distance 한 값에서 부터 찾음
 @router.get("/list/recommended")
 async def getPostListRecommended(locationX: float, locationY: float, distance: Union[int, None] = 0, numberOfPost: Union[int, None] = 10):
     postList = await getNearestPostList(locationX, locationY, distance, numberOfPost)
@@ -49,7 +49,7 @@ async def getPostListRecommended(locationX: float, locationY: float, distance: U
             detail="Failed to get posting list."
         )
 
-
+# 현재 위치+distance 한 값에서 부터 찾음
 @router.get("/list/distance")
 async def getPostListDistance(locationX: float, locationY: float, distance: Union[int, None] = 0, numberOfPost: Union[int, None] = 10):
 
@@ -70,4 +70,16 @@ async def getPostListDistance(locationX: float, locationY: float, distance: Unio
         )
 
 
+@router.post("/list/pictureURL")
+async def getPictureURL(urlList: list[int]):
+    pictureList = await getPostPictureURLListDB(urlList)
+    if(pictureList == -2):
+        await raiseDBDownError()
+    elif(pictureList):
+        return JSONResponse({"data":pictureList})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get picture URL."
+        )
 

@@ -1,7 +1,6 @@
 """
 2023.08.30 started
 
-uvicorn main:app --reload --host=0.0.0.0 --port=8000
 """
 
 from fastapi import FastAPI, Request

@@ -43,11 +43,23 @@ async def enablePost(postData: enablepostRequest):
 async def deletePicture(deleteData: deletepostpicture_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
 
-    value = await deletePostPicture(deleteData.postNumber, deleteData.pictureNumber)
-    if(value == -2):
-        await raiseDBDownError()
-    elif(value):
-        return JSONResponse({"data":{"result":"success"},"token":tokenDict})
+    isDeleted = await deletePostPicture_azure(deleteData.postNumber, deleteData.pictureNumber)
+    if(isDeleted == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File does not exist."
+        )
+    elif(isDeleted):
+        isDeletedInDB = await deletePostPictureURL_DB(deleteData.postNumber, deleteData.pictureNumber)
+        if(isDeletedInDB == -2):
+            await raiseDBDownError()
+        elif(isDeletedInDB):
+            return JSONResponse({"data":{"result":"success"},"token":tokenDict})
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete picture from DB.(File deleted in AZURE)"
+            )
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -88,13 +100,25 @@ async def deletePosting(deleteData: deleteposting_adminRequest):
     if(value == -2):
         await raiseDBDownError()
     elif(value == 1):
-        isDeleted = await deletePostPictureAll(deleteData.postNumber)
-        if(isDeleted == -2):
-            await raiseDBDownError()
-        elif(not isDeleted):
+        isDeletedAzure = await deletePostPictureAll_azure(deleteData.postNumber)
+        if(isDeletedAzure == -1):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Picture not exist in azure blob."
+            )
+        elif(isDeletedAzure != True):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete picture from DB. (posting deleted)"
+                detail="Failed to delete picture in azure blob."
+            )
+
+        isDeletedDB = await deletePostPictureAll_DB(deleteData.postNumber)
+        if(isDeletedDB == -2):
+            await raiseDBDownError()
+        elif(not isDeletedDB):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete picture from DB. (posting deleted, azure blob deleted)"
             )
         else:
             return JSONResponse({"data":{"result":"success"},"token":tokenDict})

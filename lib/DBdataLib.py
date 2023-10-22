@@ -33,8 +33,8 @@ async def getChat(routing_key, callback):
     return result
 
 
-async def existPostPicture_azure(postNumber, pictureNumber):
-    isExist = await azureBlobStorage.exist(azureBlobStorage, "post-picture", postNumber, pictureNumber)
+async def existPostPicture_azure(name):
+    isExist = await azureBlobStorage.exist(azureBlobStorage, "post-picture", name)
 
     if(isExist == False):
         return False
@@ -50,6 +50,8 @@ async def getLastPostNumber():
         postNumber = list(session.execute(text('SELECT MAX(postNumber) FROM postInfo')).fetchone())
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return False
 
     session.close()
@@ -72,10 +74,12 @@ async def getLatestPostList(targetPostNumber: int, numberOfPost: int):
                 'numberOfChat', numberOfChat,\
                 'content', content,\
                 'disabled', disabled\
-                ) FROM postInfo WHERE postNumber < {targetPostNumber} ORDER BY postNumber DESC"
+                ) FROM postInfo WHERE postNumber < {targetPostNumber} AND disabled != 1 ORDER BY postNumber DESC"
         )))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return False
     try:
         for i in range(numberOfPost):
@@ -108,11 +112,14 @@ async def getNearestPostList(locationX: Union[float, int], locationY: Union[floa
             +sin(radians({locationY}))*sin(radians(locationY))))AS distance\
             FROM postInfo\
             HAVING distance >= {distance} AND distance <= {distance+5}\
+            AND disabled != 1\
             ORDER BY distance\
             "
         )))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return False
 
     try:
@@ -129,6 +136,8 @@ async def getUserInfo(userNumber):
         user = jsonable_encoder(session.query(userInfo).get(userNumber))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     session.close()
     if(user == None):
@@ -143,6 +152,8 @@ async def getPostInfo(postNumber):
         post = jsonable_encoder(session.query(postInfo).get(postNumber))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     session.close()
     if(post == None):
@@ -156,9 +167,12 @@ async def getPostPictureList(postNumber: int):
         pictureList = (list(session.execute(text(f"SELECT pictureNumber FROM postPicture WHERE postNumber = {postNumber};"))))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.getPostPictureList]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     session.close()
@@ -169,19 +183,51 @@ async def getPostPictureList(postNumber: int):
 
     return result
 
+async def getPostPictureURLListDB(pictureList: list[int]):
+    try:
+        urlList = session.execute(text(
+            f"SELECT JSON_OBJECT(\
+                'postNumber', postNumber,\
+                'pictureNumber', pictureNumber,\
+                'imageURL', imageURL\
+                ) FROM postPicture\
+                WHERE postNumber IN ({str(pictureList)[1:-1]});"
+        ))
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.getPostPictureURLListDB]",type(e),e)
+        session.rollback()
+        session.close()
+        return 0
+    
+    session.close()
+
+    urlList = list(urlList)
+    result = []
+    for i in range(len(urlList)):
+        result.append(json.loads(urlList[i][0]))
+    return result
+
 async def getPostPictureDB(postNumber, pictureNumber):
     
     try:
-        file = session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first()
+        url = session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first().imageURL
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.getPostPictureDb]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     session.close()
-    return file
+    return url
 
 
 async def getUserPictureDB(userNumber):
@@ -189,9 +235,11 @@ async def getUserPictureDB(userNumber):
         file = session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.getUserPictureDB]",type(e),e)
         session.close()
         return False
     session.close()
@@ -203,6 +251,8 @@ async def getReviewDB_reviewNumber(reviewNumber):
         review = jsonable_encoder(session.query(reviewInfo).get(reviewNumber))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     session.close()
     if(review == None):
@@ -218,9 +268,12 @@ async def getReviewDB_author(authorUserNumber, chatRoomNumber):
         review = session.query(reviewInfo).filter(reviewInfo.authorUserNumber == authorUserNumber, reviewInfo.chatRoomNumber == chatRoomNumber).first()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.getReviewDB_author]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -233,9 +286,12 @@ async def getReviewListDB(userNumber: int):
         reviewList = list(session.execute(text(f"SELECT reviewNumber FROM reviewInfo WHERE targetUserNumber = {userNumber}")))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.getReviewListDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -249,9 +305,12 @@ async def getChatRoomInfoDB(chatRoomNumber):
         chatRoomInfo = jsonable_encoder(session.query(chatInfo).get(chatRoomNumber))
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.getChatRoomInfoDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -263,6 +322,8 @@ async def emailToUserNumber(requestEmail) -> int:
         result = (session.query(userInfo).filter(userInfo.email == requestEmail).all())[0].userNumber
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except IndexError:
         session.close()
@@ -291,9 +352,12 @@ async def createUserInfo(user: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.createUserInfo]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -329,9 +393,12 @@ async def createPostInfo(post: dict):
         postNumber = list(session.execute(text('SELECT LAST_INSERT_ID() FROM postInfo')).fetchone())
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.createPostInfo]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -342,23 +409,57 @@ async def createPostInfo(post: dict):
     return info
 
 
-async def createPostPicture_azure(file, contentType, postNumber, pictureNumber):
-    isExist = await existPostPicture_azure(postNumber, pictureNumber)
-
-    if(isExist == 1):
-        print("[AZURE Error] pictureNumber already in there.")
-        return -1
-    elif(isExist == False):
+async def createPostPictureURL_DB(url, postNumber, pictureNumber):
+    data = postPicture(
+        postNumber = postNumber,
+        pictureNumber = pictureNumber,
+        imageURL = url
+    )
+    try:
+        session.add(data)
+        session.commit()
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.createPostPictureURL_DB(2)]",type(e),e)
+        session.rollback()
+        session.close()
         return False
-    isUploaded = await azureBlobStorage.upload(azureBlobStorage, container="post-picture", postNumber=postNumber, pictureNumber=pictureNumber, file=file, type=contentType)
-    if(isUploaded):
-        return True
+    session.close()
+    return True
+
+
+async def createPostPicture_azure(file, postNumber, pictureNumber):
+    name = str(postNumber)+"-"+str(pictureNumber)+".jpeg"
+    isExistInAzure = await existPostPicture_azure(name)
+
+    if(isExistInAzure == 1):
+        print("[AZURE Error - DBdataLib.createPostPicture_azure] pictureNumber already in there.")
+        return -1
+    elif(isExistInAzure == False):
+        return False
+    
+    pictureList = await getPostPictureList(postNumber)
+    if(pictureList == -2):
+        return -2
+
+    if(pictureNumber in pictureList):
+        print("[DB Error - DBdataLib.createPostPictureURL_DB(1)] pictureNumber already in there.")
+        return False
+
+
+    imageURL = await azureBlobStorage.upload(azureBlobStorage, container="post-picture", name=name, file=file)
+    if(imageURL):
+        return imageURL
     else:
         return False
-            
 
 
 
+#not use
 async def createPostPicture(file, postNumber, pictureNumber):
     data = postPicture(
         postNumber = postNumber,
@@ -371,7 +472,7 @@ async def createPostPicture(file, postNumber, pictureNumber):
         return -2
 
     if(pictureNumber in pictureList):
-        print("[DB Error] pictureNumber already in there.")
+        print("[DB Error - DBdataLib.createPostPicture(1)] pictureNumber already in there.")
         return False
 
     try:
@@ -379,9 +480,12 @@ async def createPostPicture(file, postNumber, pictureNumber):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.createPostPicture(2)]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -397,7 +501,7 @@ async def createUserPictureDB(file, userNumber):
     if(isPictureExist == -2):
         return -2
     if(isPictureExist):
-        print("[DB Error] userNumber already in DB.")
+        print("[DB Error - DBdataLib.createUserPictureDB(1)] userNumber already in DB.")
         return False
 
     try:
@@ -405,9 +509,12 @@ async def createUserPictureDB(file, userNumber):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.createUserPictureDB(2)]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -429,9 +536,12 @@ async def createReviewDB(reviewData: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.createReviewDB(1)]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -440,6 +550,8 @@ async def createReviewDB(reviewData: dict):
         reviewNumber = list(session.execute(text("SELECT LAST_INSERT_ID() FROM reviewInfo")).fetchone())
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     session.close()
     result =  await getReviewDB_reviewNumber(reviewNumber[0])
@@ -459,9 +571,12 @@ async def createChatRoomDB(chatRoomData: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.createChatRoomDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -470,6 +585,8 @@ async def createChatRoomDB(chatRoomData: dict):
         chatRoomNumber = list(session.execute(text("SELECT LAST_INSERT_ID() FROM chatInfo")).fetchone())
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     result = await getChatRoomInfoDB(chatRoomNumber[0])
     if(result == -2):
@@ -483,9 +600,12 @@ async def updateUserInfo(user: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.updateUserInfo]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     session.close()
@@ -498,9 +618,12 @@ async def updatePostInfo(post: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.updatePostInfo]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     session.close()
@@ -512,9 +635,12 @@ async def updateReviewDB(review: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.updateReviewDB]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     session.close()
@@ -527,9 +653,12 @@ async def updateChatRoomInfoDB(chatRoom: dict):
         session.commit()
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.updateChatRoomInfoDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     session.close()
@@ -543,9 +672,12 @@ async def deleteUserInfo(userNumber: int):
         return 1
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.deleteUserInfo]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     
@@ -557,24 +689,49 @@ async def deletePostInfo(postNumber: int):
         return 1
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.deletePostInfo]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     
 
-async def deletePostPicture_azure(postNumber, pictureNumber):
+async def deletePostPictureURL_DB(postNumber, pictureNumber):
     try:
-        isDeleted = await azureBlobStorage.delete(azureBlobStorage, "post-picture", postNumber, pictureNumber)
+        session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first())
+        session.commit()
+        session.close()
+        return True
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
     except Exception as e:
-        print("[AZURE Error]",e)
+        print("[DB Error - DBdataLib.deletePostPictureURL_DB]",type(e),e)
+        session.rollback()
+        session.close()
         return False
-    if(isDeleted):
+    
+
+async def deletePostPicture_azure(postNumber, pictureNumber):
+    name = str(postNumber)+"-"+str(pictureNumber)+".jpeg"
+    try:
+        isDeleted = await azureBlobStorage.delete(azureBlobStorage, "post-picture", name)
+    except Exception as e:
+        print("[AZURE Error - DBdataLib.deletePostPicture_azure]",type(e),e)
+        return False
+    if(isDeleted == -1):
+        return -1
+    elif(isDeleted):
         return True
     else:
         return False
-    
+
+#not use
 async def deletePostPicture(postNumber, pictureNumber):
     try:
         session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first())
@@ -583,13 +740,16 @@ async def deletePostPicture(postNumber, pictureNumber):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.deletePostPicture]",type(e),e)
+        session.rollback()
         session.close()
         return False
     
-async def deletePostPictureAll(postNumber: int):
+async def deletePostPictureAll_DB(postNumber: int):
     try:
         session.execute(text(f"DELETE FROM postPicture WHERE postNumber = {str(postNumber)};"))
         session.commit()
@@ -597,11 +757,35 @@ async def deletePostPictureAll(postNumber: int):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.deletePostPictureAll]",type(e),e)
+        session.rollback()
         session.close()
         return False
+    
+
+# 최적화!!!
+async def deletePostPictureAll_azure(postNumber: int):
+    pictureList = await getPostPictureList(postNumber)
+    
+    for i in pictureList:
+        try:
+            isDeleted = await azureBlobStorage.delete(azureBlobStorage, "post-picture", str(postNumber)+"-"+str(i)+".jpeg")
+        except Exception as e:
+            print("[AZURE Error - DBdataLib.deletePostPictureAll_azure]",type(e),e)
+            return False
+        
+        if(isDeleted == -1):
+            return -1
+        elif(isDeleted != True):
+            return False
+        
+    return True
+    
+    
     
 async def deleteUserProfilePicture(userNumber):
     try:
@@ -611,9 +795,12 @@ async def deleteUserProfilePicture(userNumber):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.deleteUserProfilePicture]",type(e),e)
+        session.rollback()
         session.close()
         return False
     
@@ -625,9 +812,12 @@ async def deleteReviewDB(reviewNumber: int):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.deleteReviewDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     
@@ -640,9 +830,12 @@ async def deleteChatRoomInfoDB(chatRoomNumber):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.deleteChatRoomInfoDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     
@@ -655,9 +848,12 @@ async def deleteChatRecodeDB(chatRoomNumber):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.deleteChatRecodeDB]",type(e),e)
+        session.rollback()
         session.close()
         return False
     
@@ -670,9 +866,12 @@ async def viewsPlusOne(postNumber: int):
         return 1
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]", e)
+        print("[DB Error - DBdataLib.viewsPlusOne]",type(e),e)
+        session.rollback()
         session.close()
         return 0
     
@@ -685,9 +884,12 @@ async def ratePlus(userNumber: int, rate: int):
         return True
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
         return -2
     except Exception as e:
-        print("[DB Error]",e)
+        print("[DB Error - DBdataLib.ratePlus]",type(e),e)
+        session.rollback()
         session.close()
         return False
     
@@ -702,8 +904,11 @@ async def ratePlus(userNumber: int, rate: int):
 #         return True
 #     except OperationalError:
 #         print(f"[{datetime.now()}] DATABASE DOWN")
+#         session.rollback()
+#         session.close()
 #         return -2
 #     except Exception as e:
-#         print("[DB Error]",e)
+#         print("[DB Error - DBdataLib.rateSubtrack]",type(e),e)
+#         session.rollback()
 #         session.close()
 #         return False

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean, VARCHAR, FLOAT, INTEGER, DATETIME, PickleType, BLOB
+from sqlalchemy import Column, Boolean, VARCHAR, FLOAT, INTEGER, DATETIME, PickleType, BLOB, TEXT
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -43,7 +43,7 @@ class postPicture(Base):
     id = Column(INTEGER, nullable=False, primary_key=True)
     postNumber = Column(INTEGER, nullable=False)
     pictureNumber = Column(INTEGER, nullable=False)
-    data = Column(BLOB, nullable=False)
+    imageURL = Column(TEXT, nullable=False)
 
 
 class userProfilePicture(Base):

@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import *
 from sqlalchemy import create_engine 
 from azure.storage.blob.aio import BlobServiceClient
+from azure.core.exceptions import ResourceNotFoundError
 import pika
 import os
 import json
@@ -34,47 +35,48 @@ class engineconn:
     
 
 class azureBlobStorage:
-    async def exist(self, container: str, postNumber: int, pictureNumber: int):
+    async def exist(self, container: str, name: str):
         blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
         container_name = container
-        name = str(postNumber)+"-"+str(pictureNumber)+".jpeg"
         async with blob_service_client:
             container_client = blob_service_client.get_container_client(container_name)
             try:
                 blob_client = container_client.get_blob_client(name)
             except Exception as e:
-                print("[AZURE Error]",e)
+                print("[AZURE Error - database.exist]",type(e),e)
                 return False
             if(await blob_client.exists()):
                 return 1
             else:
                 return -1
 
-    async def upload(self, container: str, file: bytes , postNumber: int, pictureNumber: int, type: str):
+    async def upload(self, container: str, file: bytes , name: str):
         blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
         container_name = container
-        name = str(postNumber)+"-"+str(pictureNumber)+".jpeg"
         async with blob_service_client:
             container_client = blob_service_client.get_container_client(container_name)
             try:
                 blob_client = container_client.get_blob_client(name)
                 await blob_client.upload_blob(file)
             except Exception as e:
-                print("[AZURE Error]",e)
+                print("[AZURE Error - database.upload]",type(e),e)
                 return False
             
-        return True
+        return blob_client.url
     
-    async def delete(self, container: str, postNumber: int, pictureNumber: int):
+    async def delete(self, container: str, name: str):
         blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
         container_name = container
         async with blob_service_client:
             container_client = blob_service_client.get_container_client(container_name)
             try:
-                blob_client = container_client.get_blob_client(str(postNumber)+"-"+str(pictureNumber)+".jpeg")
+                blob_client = container_client.get_blob_client(name)
                 await blob_client.delete_blob()
+            except ResourceNotFoundError:
+                print("[AZURE Error - database.delete(1)]", ResourceNotFoundError, "The specified blob does not exist.")
+                return -1
             except Exception as e:
-                print("[AZURE Error]",e)
+                print("[AZURE Error - database.delete(2)]",type(e),e)
                 return False
             return True
 
