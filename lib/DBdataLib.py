@@ -44,6 +44,16 @@ async def existPostPicture_azure(name):
         return 1
 
 
+async def existUserProfilePicture_azure(name):
+    isExist = await azureBlobStorage.exist(azureBlobStorage, "user-profile-picture", name)
+
+    if(isExist == False):
+        return False
+    elif(isExist == -1):
+        return -1
+    elif(isExist == 1):
+        return 1
+
 
 async def getLastPostNumber():
     try:
@@ -232,7 +242,7 @@ async def getPostPictureDB(postNumber, pictureNumber):
 
 async def getUserPictureDB(userNumber):
     try:
-        file = session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first()
+        url = session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first().imageURL
     except OperationalError:
         print(f"[{datetime.now()}] DATABASE DOWN")
         session.rollback()
@@ -243,7 +253,7 @@ async def getUserPictureDB(userNumber):
         session.close()
         return False
     session.close()
-    return file
+    return url
 
 
 async def getReviewDB_reviewNumber(reviewNumber):
@@ -410,6 +420,15 @@ async def createPostInfo(post: dict):
 
 
 async def createPostPictureURL_DB(url, postNumber, pictureNumber):
+
+    pictureList = await getPostPictureList(postNumber)
+    if(pictureList == -2):
+        return -2
+
+    if(pictureNumber in pictureList):
+        print("[DB Error - DBdataLib.createPostPictureURL_DB(1)] pictureNumber already in there.")
+        return False
+
     data = postPicture(
         postNumber = postNumber,
         pictureNumber = pictureNumber,
@@ -437,17 +456,9 @@ async def createPostPicture_azure(file, postNumber, pictureNumber):
     isExistInAzure = await existPostPicture_azure(name)
 
     if(isExistInAzure == 1):
-        print("[AZURE Error - DBdataLib.createPostPicture_azure] pictureNumber already in there.")
+        print("[AZURE Error - DBdataLib.createPostPicture_azure(1)] pictureNumber already in there.")
         return -1
     elif(isExistInAzure == False):
-        return False
-    
-    pictureList = await getPostPictureList(postNumber)
-    if(pictureList == -2):
-        return -2
-
-    if(pictureNumber in pictureList):
-        print("[DB Error - DBdataLib.createPostPictureURL_DB(1)] pictureNumber already in there.")
         return False
 
 
@@ -491,7 +502,58 @@ async def createPostPicture(file, postNumber, pictureNumber):
     session.close()
     return True
 
+async def existUserProfilePictureDB(userNumber: int):
+    isExist = session.execute(session.query(session.query(userProfilePicture).filter(userProfilePicture.userNumber==userNumber).exists())).all()[0][0]
+    session.close()
+    return isExist
 
+
+async def createUserPictureURL_DB(url, userNumber: int):
+
+    isExist = await existUserProfilePictureDB(userNumber)
+    if(isExist):
+        return -1
+
+    data = userProfilePicture(
+        userNumber = userNumber,
+        imageURL = url
+    )
+    try:
+        session.add(data)
+        session.commit()
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.createUserPictureURL_DB]",type(e),e)
+        session.rollback()
+        session.close()
+        return False
+    
+    session.close()
+    return True
+
+
+async def createUserPicture_azure(file, userNumber):
+    name = str(userNumber)+".jpeg"
+    isExistInAzure = await existUserProfilePicture_azure(name)
+
+    if(isExistInAzure == 1):
+        print("[AZURE Error - DBdataLib.createUserPicture_azure] userProfilePicture already in there.")
+        return -1
+    elif(isExistInAzure == False):
+        return False
+
+    imageURL = await azureBlobStorage.upload(azureBlobStorage, container="user-profile-picture", name=name, file=file)
+    if(imageURL):
+        return imageURL
+    else:
+        return False
+
+
+#not use
 async def createUserPictureDB(file, userNumber):
     data = userProfilePicture(
         userNumber = userNumber,
@@ -784,9 +846,43 @@ async def deletePostPictureAll_azure(postNumber: int):
             return False
         
     return True
+
+
+async def deleteUserProfilePictureURL_DB(userNumber):
+    try:
+        session.delete(session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first())
+        session.commit()
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.deleteUserProfilePictureURL_DB]",type(e),e)
+        session.rollback()
+        session.close()
+        return False
+    
+    session.close()
+    return True
+
+
+async def deleteUserProfilePicture_azure(userNumber):
+    name = str(userNumber)+".jpeg"
+    try:
+        isDeleted = await azureBlobStorage.delete(azureBlobStorage, "user-profile-picture", name)
+    except Exception as e:
+        print("[AZURE Error - DBdataLib.deleteUserProfilePicture_azure]",type(e),e)
+        return False
+    if(isDeleted == -1):
+        return -1
+    elif(isDeleted != True):
+        return False
+    
+    return True
     
     
-    
+#not use
 async def deleteUserProfilePicture(userNumber):
     try:
         session.delete(session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first())

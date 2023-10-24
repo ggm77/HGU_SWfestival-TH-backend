@@ -19,6 +19,8 @@ from api.v1.ws import ws
 from api.v1.chat import chat
 from api.v1.socket_IO.sockets import sio_app
 
+from lib.DBdataLib import *
+
 app = FastAPI()
 
 origins = [
@@ -74,5 +76,6 @@ async def wbTest(request : Request):
 
 @app.get("/test")
 async def test():
+
     return {"test":"success"}
 

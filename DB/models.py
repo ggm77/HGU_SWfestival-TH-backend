@@ -49,8 +49,9 @@ class postPicture(Base):
 class userProfilePicture(Base):
     __tablename__ = "userProfilePicture"
 
-    userNumber = Column(INTEGER, nullable=False, primary_key=True)
-    data = Column(BLOB, nullable=False)
+    id = Column(INTEGER, nullable=False, primary_key=True)
+    userNumber = Column(INTEGER, nullable=False)
+    imageURL = Column(TEXT, nullable=False)
 
 
 class reviewInfo(Base):

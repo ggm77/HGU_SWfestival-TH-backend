@@ -43,7 +43,20 @@ async def enableUser(postData: enableuserRequest):
 @router.delete("/user/picture")
 async def deleteUserPicture(deleteData: deleteuserpicture_adminRequest):
     tokenDict = await adminVerify(deleteData.access_token, deleteData.refresh_token)
-    isDeleted = await deleteUserProfilePicture(deleteData.userNumber)
+    isDeletedAzure = await deleteUserProfilePicture_azure(deleteData.userNumber)
+
+    if(isDeletedAzure == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User profile picture not exist in azure."
+        )
+    elif(isDeletedAzure == False):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete user profile picture in azure."
+        )
+
+    isDeleted = await deleteUserProfilePictureURL_DB(deleteData.userNumber)
     if(isDeleted == -2):
         await raiseDBDownError()
     elif(isDeleted):
@@ -51,7 +64,7 @@ async def deleteUserPicture(deleteData: deleteuserpicture_adminRequest):
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete picture from DB."
+            detail="Failed to delete url from DB (picture deleted in azure)."
         )
     
 @router.get("/user/{userNumber}")
