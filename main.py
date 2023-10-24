@@ -19,8 +19,6 @@ from api.v1.ws import ws
 from api.v1.chat import chat
 from api.v1.socket_IO.sockets import sio_app
 
-from lib.DBdataLib import *
-
 app = FastAPI()
 
 origins = [
@@ -56,7 +54,7 @@ app.include_router(admin_user.router)
 app.include_router(admin_posting.router)
 app.include_router(admin_review.router)
 app.include_router(admin_chat.router)
-app.include_router(ws.router)
+# app.include_router(ws.router)
 app.include_router(chat.router)
 
 

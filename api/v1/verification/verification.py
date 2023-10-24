@@ -6,6 +6,7 @@ from lib.dataClass import *
 
 router = APIRouter(prefix="/api/v1")
 
+#use when changing userInfo
 @router.post("/verification")
 async def verificationPassword(postData: verificationRequest):
     payload = await decodeToken(postData.access_token, postData.refresh_token)

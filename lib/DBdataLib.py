@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError
 import json
 from typing import Union
 
-from DB.database import engineconn, rabbitmq, azureBlobStorage
+from DB.database import engineconn, azureBlobStorage
 from DB.models import *
 from DB.models import userInfo
 
@@ -14,23 +14,23 @@ from DB.models import userInfo
 engine = engineconn()
 session = engine.sessionmaker()
 
-rabbitmqClient = rabbitmq()
+# rabbitmqClient = rabbitmq()
 
-async def chatSetup(routing_key):
-    await rabbitmqClient.setup(routing_key)
+# async def chatSetup(routing_key):
+#     await rabbitmqClient.setup(routing_key)
 
-async def chatRecodeSetup():
-    await rabbitmqClient.setupBackup()
+# async def chatRecodeSetup():
+#     await rabbitmqClient.setupBackup()
 
-async def createChat(routing_key, body):
-    await rabbitmqClient.create_chat(routing_key=routing_key, body=body)
+# async def createChat(routing_key, body):
+#     await rabbitmqClient.create_chat(routing_key=routing_key, body=body)
 
-async def backupChat(body):
-    await rabbitmqClient.backup_chat(body=body)
+# async def backupChat(body):
+#     await rabbitmqClient.backup_chat(body=body)
 
-async def getChat(routing_key, callback):
-    result = await rabbitmqClient.get_chat(routing_key=routing_key, callback=callback)
-    return result
+# async def getChat(routing_key, callback):
+#     result = await rabbitmqClient.get_chat(routing_key=routing_key, callback=callback)
+#     return result
 
 
 async def existPostPicture_azure(name):
@@ -470,37 +470,37 @@ async def createPostPicture_azure(file, postNumber, pictureNumber):
 
 
 
-#not use
-async def createPostPicture(file, postNumber, pictureNumber):
-    data = postPicture(
-        postNumber = postNumber,
-        pictureNumber = pictureNumber,
-        data = file
-    )
+# #not use
+# async def createPostPicture(file, postNumber, pictureNumber):
+#     data = postPicture(
+#         postNumber = postNumber,
+#         pictureNumber = pictureNumber,
+#         data = file
+#     )
 
-    pictureList = await getPostPictureList(postNumber)
-    if(pictureList == -2):
-        return -2
+#     pictureList = await getPostPictureList(postNumber)
+#     if(pictureList == -2):
+#         return -2
 
-    if(pictureNumber in pictureList):
-        print("[DB Error - DBdataLib.createPostPicture(1)] pictureNumber already in there.")
-        return False
+#     if(pictureNumber in pictureList):
+#         print("[DB Error - DBdataLib.createPostPicture(1)] pictureNumber already in there.")
+#         return False
 
-    try:
-        session.add(data)
-        session.commit()
-    except OperationalError:
-        print(f"[{datetime.now()}] DATABASE DOWN")
-        session.rollback()
-        session.close()
-        return -2
-    except Exception as e:
-        print("[DB Error - DBdataLib.createPostPicture(2)]",type(e),e)
-        session.rollback()
-        session.close()
-        return False
-    session.close()
-    return True
+#     try:
+#         session.add(data)
+#         session.commit()
+#     except OperationalError:
+#         print(f"[{datetime.now()}] DATABASE DOWN")
+#         session.rollback()
+#         session.close()
+#         return -2
+#     except Exception as e:
+#         print("[DB Error - DBdataLib.createPostPicture(2)]",type(e),e)
+#         session.rollback()
+#         session.close()
+#         return False
+#     session.close()
+#     return True
 
 async def existUserProfilePictureDB(userNumber: int):
     isExist = session.execute(session.query(session.query(userProfilePicture).filter(userProfilePicture.userNumber==userNumber).exists())).all()[0][0]
@@ -553,34 +553,34 @@ async def createUserPicture_azure(file, userNumber):
         return False
 
 
-#not use
-async def createUserPictureDB(file, userNumber):
-    data = userProfilePicture(
-        userNumber = userNumber,
-        data = file
-    )
-    isPictureExist = await getUserPictureDB(userNumber)
-    if(isPictureExist == -2):
-        return -2
-    if(isPictureExist):
-        print("[DB Error - DBdataLib.createUserPictureDB(1)] userNumber already in DB.")
-        return False
+# #not use
+# async def createUserPictureDB(file, userNumber):
+#     data = userProfilePicture(
+#         userNumber = userNumber,
+#         data = file
+#     )
+#     isPictureExist = await getUserPictureDB(userNumber)
+#     if(isPictureExist == -2):
+#         return -2
+#     if(isPictureExist):
+#         print("[DB Error - DBdataLib.createUserPictureDB(1)] userNumber already in DB.")
+#         return False
 
-    try:
-        session.add(data)
-        session.commit()
-    except OperationalError:
-        print(f"[{datetime.now()}] DATABASE DOWN")
-        session.rollback()
-        session.close()
-        return -2
-    except Exception as e:
-        print("[DB Error - DBdataLib.createUserPictureDB(2)]",type(e),e)
-        session.rollback()
-        session.close()
-        return False
-    session.close()
-    return True
+#     try:
+#         session.add(data)
+#         session.commit()
+#     except OperationalError:
+#         print(f"[{datetime.now()}] DATABASE DOWN")
+#         session.rollback()
+#         session.close()
+#         return -2
+#     except Exception as e:
+#         print("[DB Error - DBdataLib.createUserPictureDB(2)]",type(e),e)
+#         session.rollback()
+#         session.close()
+#         return False
+#     session.close()
+#     return True
 
 
 async def createReviewDB(reviewData: dict):
@@ -708,23 +708,23 @@ async def updateReviewDB(review: dict):
     session.close()
     return review["reviewNumber"]
 
-#not use
-async def updateChatRoomInfoDB(chatRoom: dict):
-    try:
-        session.query(chatInfo).filter(chatInfo.chatRoomNumber == chatRoom["chatRoomNumber"]).update(chatRoom)
-        session.commit()
-    except OperationalError:
-        print(f"[{datetime.now()}] DATABASE DOWN")
-        session.rollback()
-        session.close()
-        return -2
-    except Exception as e:
-        print("[DB Error - DBdataLib.updateChatRoomInfoDB]",type(e),e)
-        session.rollback()
-        session.close()
-        return False
-    session.close()
-    return chatRoom["chatRoomNumber"]
+# #not use
+# async def updateChatRoomInfoDB(chatRoom: dict):
+#     try:
+#         session.query(chatInfo).filter(chatInfo.chatRoomNumber == chatRoom["chatRoomNumber"]).update(chatRoom)
+#         session.commit()
+#     except OperationalError:
+#         print(f"[{datetime.now()}] DATABASE DOWN")
+#         session.rollback()
+#         session.close()
+#         return -2
+#     except Exception as e:
+#         print("[DB Error - DBdataLib.updateChatRoomInfoDB]",type(e),e)
+#         session.rollback()
+#         session.close()
+#         return False
+#     session.close()
+#     return chatRoom["chatRoomNumber"]
 
 async def deleteUserInfo(userNumber: int):
     try:
@@ -793,23 +793,23 @@ async def deletePostPicture_azure(postNumber, pictureNumber):
     else:
         return False
 
-#not use
-async def deletePostPicture(postNumber, pictureNumber):
-    try:
-        session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first())
-        session.commit()
-        session.close()
-        return True
-    except OperationalError:
-        print(f"[{datetime.now()}] DATABASE DOWN")
-        session.rollback()
-        session.close()
-        return -2
-    except Exception as e:
-        print("[DB Error - DBdataLib.deletePostPicture]",type(e),e)
-        session.rollback()
-        session.close()
-        return False
+# #not use
+# async def deletePostPicture(postNumber, pictureNumber):
+#     try:
+#         session.delete(session.query(postPicture).filter(postPicture.postNumber == postNumber, postPicture.pictureNumber == pictureNumber).first())
+#         session.commit()
+#         session.close()
+#         return True
+#     except OperationalError:
+#         print(f"[{datetime.now()}] DATABASE DOWN")
+#         session.rollback()
+#         session.close()
+#         return -2
+#     except Exception as e:
+#         print("[DB Error - DBdataLib.deletePostPicture]",type(e),e)
+#         session.rollback()
+#         session.close()
+#         return False
     
 async def deletePostPictureAll_DB(postNumber: int):
     try:
@@ -882,23 +882,23 @@ async def deleteUserProfilePicture_azure(userNumber):
     return True
     
     
-#not use
-async def deleteUserProfilePicture(userNumber):
-    try:
-        session.delete(session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first())
-        session.commit()
-        session.close()
-        return True
-    except OperationalError:
-        print(f"[{datetime.now()}] DATABASE DOWN")
-        session.rollback()
-        session.close()
-        return -2
-    except Exception as e:
-        print("[DB Error - DBdataLib.deleteUserProfilePicture]",type(e),e)
-        session.rollback()
-        session.close()
-        return False
+# #not use
+# async def deleteUserProfilePicture(userNumber):
+#     try:
+#         session.delete(session.query(userProfilePicture).filter(userProfilePicture.userNumber == userNumber).first())
+#         session.commit()
+#         session.close()
+#         return True
+#     except OperationalError:
+#         print(f"[{datetime.now()}] DATABASE DOWN")
+#         session.rollback()
+#         session.close()
+#         return -2
+#     except Exception as e:
+#         print("[DB Error - DBdataLib.deleteUserProfilePicture]",type(e),e)
+#         session.rollback()
+#         session.close()
+#         return False
     
 async def deleteReviewDB(reviewNumber: int):
     try:
