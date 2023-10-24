@@ -83,6 +83,11 @@ async def updatePosting(updateData: updatepostingRequest):
     if(str(post["postUserNumber"]) == userNumber):
         data = jsonable_encoder(updateData)
 
+        keyList = list(data.keys())
+        for i in range(len(keyList)):
+            if(data[keyList[i]] == None):
+                del data[keyList[i]]
+
         del data["access_token"]
         del data["token_type"]
         del data["refresh_token"]

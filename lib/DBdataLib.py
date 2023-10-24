@@ -80,6 +80,8 @@ async def getLatestPostList(targetPostNumber: int, numberOfPost: int):
                 'postCategory', postCategory,\
                 'locationX', locationX,\
                 'locationY', locationY,\
+                'lostTime', lostTime,\
+                'lostPlace', lostPlace,\
                 'views', views,\
                 'numberOfChat', numberOfChat,\
                 'content', content,\
@@ -113,6 +115,8 @@ async def getNearestPostList(locationX: Union[float, int], locationY: Union[floa
             'postCategory', postCategory,\
             'locationX', locationX,\
             'locationY', locationY,\
+            'lostTime', lostTime,\
+            'lostPlace', lostPlace,\
             'views', views,\
             'numberOfChat', numberOfChat,\
             'content', content,\
@@ -391,6 +395,8 @@ async def createPostInfo(post: dict):
         postCategory = post["postCategory"],
         locationX = post["locationX"],
         locationY = post["locationY"],
+        lostTime = post["lostTime"],
+        lostPlace = post["lostPlace"],
         views = 0,
         numberOfChat = 0,
         content = post["content"],

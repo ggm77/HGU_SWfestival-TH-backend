@@ -31,6 +31,8 @@ class postInfo(Base):
     postCategory = Column(VARCHAR, nullable=False)
     locationX = Column(FLOAT, nullable=False)
     locationY = Column(FLOAT, nullable=False)
+    lostTime = Column(DATETIME, nullable=False)
+    lostPlace = Column(VARCHAR, nullable=False)
     views = Column(INTEGER, nullable=False)
     numberOfChat = Column(INTEGER, nullable=False)
     content = Column(VARCHAR, nullable=False)

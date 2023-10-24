@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Union
+from datetime import datetime
 
 class tokenRequest(BaseModel):
     email: str
@@ -109,6 +110,8 @@ class createpostingRequest(BaseModel):
     postCategory: str
     locationX: float
     locationY: float
+    lostTime: datetime
+    lostPlace: str
     content: str
     access_token: str
     token_type: str
@@ -116,12 +119,14 @@ class createpostingRequest(BaseModel):
 
 class updatepostingRequest(BaseModel):
     postNumber: int
-    postName: str
-    postType: str
-    postCategory: str
-    locationX: float
-    locationY: float
-    content: str
+    postName: Union[str, None]
+    postType: Union[str, None]
+    postCategory: Union[str, None]
+    locationX: Union[float, None]
+    locationY: Union[float, None]
+    lostTime: Union[datetime, None]
+    lostPlace: Union[str, None]
+    content: Union[str, None]
     access_token: str
     token_type: str
     refresh_token: str
@@ -193,6 +198,8 @@ class updateposting_adminRequest(BaseModel):
     postCategory: Union[str, None]
     locationX: Union[float, None]
     locationY: Union[float, None]
+    lostTime: Union[datetime, None]
+    lostPlace: Union[str, None]
     content: Union[str, None]
     disabled: Union[bool, None]
     access_token: str
