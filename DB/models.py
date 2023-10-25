@@ -37,6 +37,7 @@ class postInfo(Base):
     numberOfChat = Column(INTEGER, nullable=False)
     content = Column(VARCHAR, nullable=False)
     disabled = Column(Boolean, nullable=False)
+    # FULLTEXT(postName, content, lostPlace)
 
 
 class postPicture(Base):

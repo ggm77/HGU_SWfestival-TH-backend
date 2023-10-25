@@ -131,14 +131,16 @@ async def deleteUser(deleteData: deleteuser_adminRequest):
     if(userPicture == -2):
         await raiseDBDownError()
     elif(userPicture):
-        isDeleted = await deleteUserProfilePicture(deleteData.targetUserNumber)
-        if(isDeleted == -2):
-            await raiseDBDownError()
-        elif(not isDeleted):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete picture from DB."
-            )
+        isDeletedInAzure = await deleteUserProfilePicture_azure(deleteData.targetUserNumber)
+        if(isDeletedInAzure):
+            isDeleted = await deleteUserProfilePictureURL_DB(deleteData.targetUserNumber)
+            if(isDeleted == -2):
+                await raiseDBDownError()
+            elif(not isDeleted):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to delete picture from DB. (userInfo deleted in DB, userProfilePicture deleted in Azure)"
+                )
     if(value == 1):
         return JSONResponse({"data":{"result":"success"},"token":tokenDict})
     else:
