@@ -11,11 +11,6 @@ router = APIRouter(prefix="/api/v1/search")
 # mariadb innodb_ft_min_token_size = 2
 @router.get("/posting/recent")
 async def search(find: str, numberOfPost: int):
-    if(len(find) < 2):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The word to find is too short."
-        )
     
     find = "* ".join(find.split())
     find += "*"
@@ -34,11 +29,6 @@ async def search(find: str, numberOfPost: int):
 
 @router.get("/posting/exact")
 async def search(find: str, numberOfPost: int):
-    if(len(find) < 2):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The word to find is too short."
-        )
     
     find = "* ".join(find.split())
     find += "*"
