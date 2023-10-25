@@ -22,7 +22,7 @@ async def connect(sid, environ, auth: dict):
 
 
     """
-    ----frontend----
+    ----frontend (react)----
     const socket = io("http://localhost:64000", {
         path: "/api/v1/socket_IO/sockets",
         auth: {
@@ -63,15 +63,24 @@ async def chat(sid, data, room):
 
     """
     data = {
-        "messageType":"(file or text)",
+        "messageType":"(message or jpeg)",
         "message":"(메세지 or null)",
-        "file":"(파일 or null)",
+        "file":"(null or 파일 or null)",
         "timestamp":"2023.10.10T22:42:20"
     }
     """
-    await sio_server.emit('chat', {'sid': sid, 'message': data["message"]}, to=room)
+    if(data["messageType"] == "message"):
+        await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'message', 'message': data["message"]}, to=room)
+
+    elif(data["messageType"] == "jpeg"):
+        await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'jpeg', 'file':data["file"]}, to=room)
 
 
 @sio_server.event
 async def disconnect(sid):
     print(f'{sid}: disconnected')
+
+@sio_server.event
+async def leave(sid, room):
+    await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'info', 'info' : f'[{sid} has left]'}, to=room)
+    sio_server.leave_room(sid, room)

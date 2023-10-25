@@ -996,6 +996,92 @@ async def ratePlus(userNumber: int, rate: int):
         return False
     
 
+async def searchInDB_recent(find: str, numberOfPost: int):
+    postList = []
+    try:
+        result = list(session.execute(text(
+            f"SELECT JSON_OBJECT(\
+                'postNumber',postNumber,\
+                'postName', postName,\
+                'postUserNumber', postUserNumber,\
+                'postDate', postDate,\
+                'postType', postType,\
+                'postCategory', postCategory,\
+                'locationX', locationX,\
+                'locationY', locationY,\
+                'lostTime', lostTime,\
+                'lostPlace', lostPlace,\
+                'views', views,\
+                'numberOfChat', numberOfChat,\
+                'content', content,\
+                'disabled', disabled\
+                ) FROM postInfo WHERE MATCH(postName, content, lostPlace) AGAINST(\'{find}\' IN BOOLEAN MODE) ORDER BY postNumber DESC LIMIT {numberOfPost}"
+        )).all())
+        #result = session.query(session.query(postInfo).filter(postInfo.postName.match({find + '*'}), postInfo.content.match({find + '*'}), postInfo.lostPlace.match({find + '*'})).all())
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.searchInDB]",type(e),e)
+        session.rollback()
+        session.close()
+        return False
+    
+    try:
+        for i in range(numberOfPost):
+            postList.append(json.loads(result[i][0]))
+    except IndexError:
+        pass
+    
+    return postList
+
+
+
+async def searchInDB_exact(find: str, numberOfPost: int):
+    postList = []
+    try:
+        result = list(session.execute(text(
+            f"SELECT JSON_OBJECT(\
+                'postNumber',postNumber,\
+                'postName', postName,\
+                'postUserNumber', postUserNumber,\
+                'postDate', postDate,\
+                'postType', postType,\
+                'postCategory', postCategory,\
+                'locationX', locationX,\
+                'locationY', locationY,\
+                'lostTime', lostTime,\
+                'lostPlace', lostPlace,\
+                'views', views,\
+                'numberOfChat', numberOfChat,\
+                'content', content,\
+                'disabled', disabled\
+                ) FROM postInfo WHERE MATCH(postName, content, lostPlace) AGAINST(\'{find}\' IN BOOLEAN MODE) LIMIT {numberOfPost}"
+        )).all())
+        #result = session.query(session.query(postInfo).filter(postInfo.postName.match({find + '*'}), postInfo.content.match({find + '*'}), postInfo.lostPlace.match({find + '*'})).all())
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.searchInDB]",type(e),e)
+        session.rollback()
+        session.close()
+        return False
+    
+    try:
+        for i in range(numberOfPost):
+            postList.append(json.loads(result[i][0]))
+    except IndexError:
+        pass
+    
+    return postList
+
+
+
 #not use
 # async def rateSubtrack(userNumber: int, rate: int):
 #     try:

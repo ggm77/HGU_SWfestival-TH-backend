@@ -18,6 +18,7 @@ from api.v1.verification import verification
 from api.v1.ws import ws
 from api.v1.chat import chat
 from api.v1.socket_IO.sockets import sio_app
+from api.v1.search import posting as search_posting
 
 app = FastAPI()
 
@@ -56,6 +57,7 @@ app.include_router(admin_review.router)
 app.include_router(admin_chat.router)
 # app.include_router(ws.router)
 app.include_router(chat.router)
+app.include_router(search_posting.router)
 
 
 

@@ -94,6 +94,8 @@ async def updateUserinfo(putData: updateuserRequest):
     
     
     putData["userNumber"] = userNumber
+    access_token = putData["access_token"]
+    refresh_token = putData["refresh_token"]
     del putData["access_token"]
     del putData["token_type"]
     del putData["refresh_token"]
@@ -107,7 +109,7 @@ async def updateUserinfo(putData: updateuserRequest):
         if(payload.get("type")=="refresh"):
             return JSONResponse({"data":user,"token":await create_token(payload.get("sub"))})
         else:
-            return JSONResponse({"data":user,"token":{"access_token":putData.access_token,"refresh_token":putData.refresh_token}})
+            return JSONResponse({"data":user,"token":{"access_token":access_token,"refresh_token":refresh_token}})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
