@@ -73,6 +73,7 @@ async def chat(sid, data, room):
         await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'message', 'message': data["message"]}, to=room)
 
     elif(data["messageType"] == "jpeg"):
+        # 채팅 저장 여부에 따라 이미지 저장 
         await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'jpeg', 'file':data["file"]}, to=room)
 
 

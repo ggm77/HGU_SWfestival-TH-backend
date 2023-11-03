@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Union
 from datetime import datetime
-
 class tokenRequest(BaseModel):
     email: str
     password: str
@@ -23,6 +22,14 @@ class registResponse(BaseModel):#not use
     locationY: float
     point: int
     disabled: bool
+
+class taskcompleteRequest(BaseModel):
+    userNumber: int
+    postNumber: int
+    foundUserNumber: int
+    access_token: str
+    token_type: str
+    refresh_token: str
 
 class uploadpostpictureRequest(BaseModel):
     postNumber: int

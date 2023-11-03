@@ -10,6 +10,12 @@ router = APIRouter(prefix="/api/v1")
 
 @router.post("/posting")
 async def createPosting(postData: createpostingRequest):
+    if(postData.postType != "lost" and postData.postType != "found"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="lostType is not correct."
+        )
+
     info = jsonable_encoder(postData)
 
     post = await uploadPost(info)

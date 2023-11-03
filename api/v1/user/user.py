@@ -113,7 +113,7 @@ async def updateUserinfo(putData: updateuserRequest):
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Faild to update userInfo in DB."
+            detail="Failed to update userInfo in DB."
         )
 
 

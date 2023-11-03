@@ -732,6 +732,44 @@ async def updateReviewDB(review: dict):
 #     session.close()
 #     return chatRoom["chatRoomNumber"]
 
+
+async def raisePoint(userNumber: int):
+    try:
+        session.execute(text(f"update userInfo set point = userInfo.point + 10 where userNumber = {userNumber}"))
+        session.commit()
+        session.close()
+        return True
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.raisePoint]",type(e),e)
+        session.rollback()
+        session.close()
+        return 0
+
+
+async def changePostingDisable(postNumber: int):
+    try:
+        session.execute(text(f"update postInfo set disabled = 1 where postNumber = {postNumber}"))
+        session.commit()
+        session.close()
+        return True
+    except OperationalError:
+        print(f"[{datetime.now()}] DATABASE DOWN")
+        session.rollback()
+        session.close()
+        return -2
+    except Exception as e:
+        print("[DB Error - DBdataLib.changePostingDisable]",type(e),e)
+        session.rollback()
+        session.close()
+        return 0
+
+
+
 async def deleteUserInfo(userNumber: int):
     try:
         session.delete(session.query(userInfo).filter(userInfo.userNumber == userNumber).first())

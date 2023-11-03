@@ -344,5 +344,29 @@ async def bytesToJpeg(data):
     image.save(buffer, format="jpeg")
     return buffer.getvalue()
 
+async def postingTaskComplete(postNumber: int, foundUserNumber: int):
+    isDisabled = await changePostingDisable(postNumber)
+
+    if(isDisabled == -2):
+        await raiseDBDownError()
+    elif(isDisabled):
+        isRaised = await raisePoint(foundUserNumber)
+        if(isRaised == -2):
+            await raiseDBDownError()
+        elif(isRaised):
+            return True
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to raise point. (Posting disabled.)"
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to disable posting."
+        )
+
+
+
 def getHashedPassword(password):
     return pwd_context.hash(password)
