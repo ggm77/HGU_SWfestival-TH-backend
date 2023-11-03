@@ -14,10 +14,20 @@ async def create_chat_room(postData: createchatroomRequest):
     payload = await decodeToken(postData.access_token, postData.refresh_token)
     userNumber = payload.get("sub")
     info = await getPostInfo(postData.postNumber)
+    print(info)
     if(info == -2):
         await raiseDBDownError()
-
-    if(info["postUserNumber"] != postData.postUserNumber):
+    elif(info == -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Posting not exist."
+        )
+    elif(info == 0):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Posting was disabled."
+        )
+    elif(info["postUserNumber"] != postData.postUserNumber):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="PostUserNumber not matched"
