@@ -47,7 +47,7 @@ async def create_chat_room(postData: createchatroomRequest):
     if(payload.get("type")=="refresh"):
         return JSONResponse({"data":value,"token":await create_token(userNumber)})
     else:
-        return JSONResponse({"data":value,"token":{"access_token":postData.access_token,"refresh_token":postData.refresh_token}})
+        return JSONResponse({"data":value,"token":{"access_token":postData["access_token"],"refresh_token":postData["refresh_token"]}})
 
 
 @router.get("/chat")
