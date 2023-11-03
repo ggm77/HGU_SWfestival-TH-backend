@@ -14,7 +14,6 @@ async def create_chat_room(postData: createchatroomRequest):
     payload = await decodeToken(postData.access_token, postData.refresh_token)
     userNumber = payload.get("sub")
     info = await getPostInfo(postData.postNumber)
-    print(info)
     if(info == -2):
         await raiseDBDownError()
     elif(info == -1):
@@ -80,13 +79,19 @@ async def get_chat_room(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="UserNumber not correct."
         )
-    # 2:1->2
-    #'채팅방 번호' : '채팅 건 사람' -> '원본 포스팅 쓴 사람'     'chatRoomNumber' : 'chatterNumber' -> 'postUserNumber'
-    chat_access_token = await create_access_token(str(chatRoomNumber)+":"+str(chatRoomInfo["chatterNumber"])+"->"+str(chatRoomInfo["postUserNumber"]))
-    chat_refresh_token = await create_refresh_token(str(chatRoomNumber)+":"+str(chatRoomInfo["chatterNumber"])+"->"+str(chatRoomInfo["postUserNumber"]))
+    # #socket IO
+    # # 2:1->2
+    # #'채팅방 번호' : '채팅 건 사람' -> '원본 포스팅 쓴 사람'     'chatRoomNumber' : 'chatterNumber' -> 'postUserNumber'
+    # chat_access_token = await create_access_token(str(chatRoomNumber)+":"+str(chatRoomInfo["chatterNumber"])+"->"+str(chatRoomInfo["postUserNumber"]))
+    # chat_refresh_token = await create_refresh_token(str(chatRoomNumber)+":"+str(chatRoomInfo["chatterNumber"])+"->"+str(chatRoomInfo["postUserNumber"]))
 
-    # await chatSetup(str(chatRoomNumber)+"."+str(userNumber))
-    # await chatRecodeSetup()
+    #rabbitmq
+    # 2-1
+    # '채팅방 번호' : '유저 번호'
+    chat_access_token = await create_access_token(str(chatRoomNumber)+"-"+str(userNumber))
+    chat_refresh_token = await create_refresh_token(str(chatRoomNumber)+"-"+str(userNumber))
+    await chatSetup(str(chatRoomNumber)+"."+str(userNumber))
+    await chatRecodeSetup()
 
     if(payload.get("type")=="refresh"):
         return JSONResponse(

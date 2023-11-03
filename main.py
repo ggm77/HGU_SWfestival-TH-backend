@@ -17,7 +17,7 @@ from api.v1.review import review, list as review_list
 from api.v1.verification import verification
 from api.v1.ws import ws
 from api.v1.chat import chat
-from api.v1.socket_IO.sockets import sio_app
+from api.v1.socket_IO.sockets_190 import sio_server
 from api.v1.search import posting as search_posting
 from api.v1.taskComplete import taskComplete
 
@@ -42,7 +42,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-app.mount("/api/v1/socket_IO", app=sio_app)
+#app.mount("/api/v1/socket_IO", app=sio_server)
 app.include_router(user.router)
 app.include_router(user_picture.router)
 app.include_router(token.router)
@@ -56,7 +56,7 @@ app.include_router(admin_user.router)
 app.include_router(admin_posting.router)
 app.include_router(admin_review.router)
 app.include_router(admin_chat.router)
-# app.include_router(ws.router)
+app.include_router(ws.router)
 app.include_router(chat.router)
 app.include_router(search_posting.router)
 app.include_router(taskComplete.router)
@@ -69,7 +69,7 @@ templates = Jinja2Templates(directory="assets/testFrontPage")
 async def wbTest(request : Request):
     return  templates.TemplateResponse("testWS.html",{"request":request})
 
-#not use - do it on frontend
+# #not use - do it on frontend
 # @app.get("/test/wsTest/getchat")
 # async def wbTestGetchat(request: Request):
 #     return templates.TemplateResponse("testWSgetchat.html",{"request":request})
@@ -80,4 +80,3 @@ async def wbTest(request : Request):
 async def test():
 
     return {"test":"success"}
-

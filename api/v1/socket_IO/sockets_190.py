@@ -1,4 +1,5 @@
-import socketio
+from fastapi import APIRouter, HTTPException, status,WebSocket
+from socketio import AsyncServer
 
 from lib.lib import *
 
@@ -6,21 +7,18 @@ from lib.lib import *
 #https://velog.io/@stresszero/python-socketio
 
 
+router = APIRouter(prefix="/api/v1")
 
-sio_server = socketio.AsyncServer(
-    async_mode='asgi',
-    cors_allowed_origins=[]
-)
+sio_server = AsyncServer(async_mode="asgi")
 
-
-
-sio_app = socketio.ASGIApp(
-    socketio_server=sio_server,
-    socketio_path='sockets'
-)
+# sio_app = socketio.ASGIApp(
+#     socketio_server=sio_server,
+#     socketio_path='sockets'
+# )
 
 
-@sio_server.event
+
+@sio_server.on("connect")
 async def connect(sid, environ, auth: dict):
 
 
@@ -61,14 +59,14 @@ async def connect(sid, environ, auth: dict):
     await sio_server.emit('join', {'sid': sid}, to=chatRoomNumber)
 
 
-@sio_server.event
+@sio_server.on("chat")
 async def chat(sid, data, room):
 
     """
     data = {
         "messageType":"(message or jpeg)",
         "message":"(메세지 or null)",
-        "file":"(null or 파일)",
+        "file":"(null or 파일 or null)",
         "timestamp":"2023.10.10T22:42:20"
     }
     """
@@ -80,11 +78,17 @@ async def chat(sid, data, room):
         await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'jpeg', 'file':data["file"]}, to=room)
 
 
-@sio_server.event
+@sio_server.on("disconnect")
 async def disconnect(sid):
     print(f'{sid}: disconnected')
 
-@sio_server.event
+@sio_server.on("leave")
 async def leave(sid, room):
     await sio_server.emit('chat', {'sid' : sid, 'messageType' : 'info', 'info' : f'[{sid} has left]'}, to=room)
     sio_server.leave_room(sid, room)
+
+
+
+@router.websocket("/socket_IO")
+async def socketio_endpoint(websocket: WebSocket):
+    await sio_server.attach(websocket)

@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError
 import json
 from typing import Union
 
-from DB.database import engineconn, azureBlobStorage
+from DB.database import engineconn, azureBlobStorage, rabbitmq
 from DB.models import *
 from DB.models import userInfo
 
@@ -14,23 +14,23 @@ from DB.models import userInfo
 engine = engineconn()
 session = engine.sessionmaker()
 
-# rabbitmqClient = rabbitmq()
+rabbitmqClient = rabbitmq()
 
-# async def chatSetup(routing_key):
-#     await rabbitmqClient.setup(routing_key)
+async def chatSetup(routing_key):
+    await rabbitmqClient.setup(routing_key)
 
-# async def chatRecodeSetup():
-#     await rabbitmqClient.setupBackup()
+async def chatRecodeSetup():
+    await rabbitmqClient.setupBackup()
 
-# async def createChat(routing_key, body):
-#     await rabbitmqClient.create_chat(routing_key=routing_key, body=body)
+async def createChat(routing_key, body):
+    await rabbitmqClient.create_chat(routing_key=routing_key, body=body)
 
-# async def backupChat(body):
-#     await rabbitmqClient.backup_chat(body=body)
+async def backupChat(body):
+    await rabbitmqClient.backup_chat(body=body)
 
-# async def getChat(routing_key, callback):
-#     result = await rabbitmqClient.get_chat(routing_key=routing_key, callback=callback)
-#     return result
+async def getChat(routing_key, callback):
+    result = await rabbitmqClient.get_chat(routing_key=routing_key, callback=callback)
+    return result
 
 
 async def existPostPicture_azure(name):
@@ -1053,7 +1053,7 @@ async def searchInDB_recent(find: str, numberOfPost: int):
                 'numberOfChat', numberOfChat,\
                 'content', content,\
                 'disabled', disabled\
-                ) FROM postInfo WHERE MATCH(postName, content, lostPlace) AGAINST(\'{find}\' IN BOOLEAN MODE) ORDER BY postNumber DESC LIMIT {numberOfPost}"
+                ) FROM postInfo WHERE MATCH(postName, content, lostPlace) AGAINST(\'{find}\' IN BOOLEAN MODE) AND disabled != 1 ORDER BY postNumber DESC LIMIT {numberOfPost}"
         )).all())
         #result = session.query(session.query(postInfo).filter(postInfo.postName.match({find + '*'}), postInfo.content.match({find + '*'}), postInfo.lostPlace.match({find + '*'})).all())
     except OperationalError:
@@ -1072,7 +1072,6 @@ async def searchInDB_recent(find: str, numberOfPost: int):
             postList.append(json.loads(result[i][0]))
     except IndexError:
         pass
-    
     return postList
 
 
@@ -1096,7 +1095,7 @@ async def searchInDB_exact(find: str, numberOfPost: int):
                 'numberOfChat', numberOfChat,\
                 'content', content,\
                 'disabled', disabled\
-                ) FROM postInfo WHERE MATCH(postName, content, lostPlace) AGAINST(\'{find}\' IN BOOLEAN MODE) LIMIT {numberOfPost}"
+                ) FROM postInfo WHERE MATCH(postName, content, lostPlace) AGAINST(\'{find}\' IN BOOLEAN MODE) AND disabled != 1 LIMIT {numberOfPost}"
         )).all())
         #result = session.query(session.query(postInfo).filter(postInfo.postName.match({find + '*'}), postInfo.content.match({find + '*'}), postInfo.lostPlace.match({find + '*'})).all())
     except OperationalError:
