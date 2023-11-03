@@ -69,6 +69,7 @@ async def getLastPostNumber():
 
 async def getLatestPostList(targetPostNumber: int, numberOfPost: int):
     postList = []
+    postNameList = []
     try:
         value = list(session.execute(text(
             f"SELECT JSON_OBJECT(\
@@ -95,14 +96,17 @@ async def getLatestPostList(targetPostNumber: int, numberOfPost: int):
         return False
     try:
         for i in range(numberOfPost):
-            postList.append(json.loads(value[i][0]))
+            data = json.loads(value[i][0])
+            postList.append(data)
+            postNameList.append(data["postName"])
     except IndexError:
         pass
     session.close()
-    return postList
+    return {"postList":postList,"postNameList":postNameList}
 
 async def getNearestPostList(locationX: Union[float, int], locationY: Union[float, int], distance: Union[float, int], numberOfPost: int):
     postList = []
+    postNameList = []
     try:
         #distance 1 == 1km
         value = list(session.execute(text(
@@ -138,11 +142,13 @@ async def getNearestPostList(locationX: Union[float, int], locationY: Union[floa
 
     try:
         for i in range(numberOfPost):
-            postList.append(json.loads(value[i][0]))
+            data = json.loads(value[i][0])
+            postList.append(data)
+            postNameList.append(data["postName"])
     except IndexError:
         pass
     session.close()
-    return postList
+    return {"postList":postList,"postNameList":postNameList}
 
 
 async def getUserInfo(userNumber):
@@ -174,6 +180,18 @@ async def getPostInfo(postNumber):
         return -1
     elif(post["disabled"] == True):
         return 0
+    
+
+    userName = await getUserInfo(post["postUserNumber"])
+    if(userName == -2):
+        return -2
+    elif(userName == -1):
+        return -1
+    elif(userName == 0):
+        return 0
+    
+    post["userName"] = userName["username"]
+
     return post
 
 async def getPostPictureList(postNumber: int):

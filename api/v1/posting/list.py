@@ -22,8 +22,8 @@ async def getPostingListRecent(targetPostNumber: Union[int, None] = None, number
 
     if(postList == False):
         await raiseDBDownError()
-    elif(postList[0]):
-        return JSONResponse({"lastPostNumber":postList[-1]["postNumber"],"postList":postList})
+    elif(postList["postList"][0]):
+        return JSONResponse({"lastPostNumber":postList["postList"][-1]["postNumber"],"postList":postList["postList"],"postNameList":postList["postNameList"]})
     elif(postList == []):
         return JSONResponse({"postList":None})
     else:
@@ -40,9 +40,9 @@ async def getPostListRecommended(locationX: float, locationY: float, distance: U
         await raiseDBDownError()
     elif(postList == []):
         return JSONResponse({"postList":None})
-    elif(postList[0]):
+    elif(postList["postList"][0]):
         postList.sort(key=lambda x: x["postNumber"])
-        return JSONResponse({"postList":postList})
+        return JSONResponse({"postList":postList["postList"],"postNameList":postList["postNameList"]})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -61,8 +61,8 @@ async def getPostListDistance(locationX: float, locationY: float, distance: Unio
         await raiseDBDownError()
     elif(postList == []):
         return JSONResponse({"postList":None})
-    elif(postList[0]):
-        return JSONResponse({"postList":postList})
+    elif(postList["postList"][0]):
+        return JSONResponse({"postList":postList["postList"],"postNameList":postList["postNameList"]})
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -58,6 +58,8 @@ async def getPosting(postNumber: int, access_token: Union[str, None] = None, tok
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Post disabled."
         )
+    
+
 
     if(access_token != None and refresh_token != None):
         if(payload.get("type")=="refresh"):
